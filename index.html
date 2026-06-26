@@ -1,0 +1,1681 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CRM BDP Comercial 2.0</title>
+  <style>
+
+    :root {
+      --bg: #f5f3ef;
+      --surface: #ffffff;
+      --surface-2: #fbfaf7;
+      --ink: #121212;
+      --muted: #6f716f;
+      --soft: #e9e4da;
+      --brand: #8f754d;
+      --brand-2: #a88955;
+      --brand-dark: #241f17;
+      --gold: #8f754d;
+      --gold-2: #b7985e;
+      --line: rgba(36,31,23,.12);
+      --danger: #ef5b5b;
+      --ok: #4ba34f;
+      --blue: #5792c7;
+      --orange: #f2a13a;
+      --purple: #7d6ac8;
+      --input: #ffffff;
+      --shadow: 0 18px 45px rgba(36,31,23,.10);
+      --shadow-soft: 0 8px 26px rgba(36,31,23,.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top right, rgba(143,117,77,.14), transparent 32rem),
+        linear-gradient(135deg, #f8f7f4 0%, #f0ede6 100%);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    body::before {
+      content:""; position:fixed; inset:0; pointer-events:none; opacity:.35;
+      background-image: radial-gradient(rgba(36,31,23,.07) 1px, transparent 1px);
+      background-size: 22px 22px;
+      mask-image: linear-gradient(90deg, transparent 0, black 280px, transparent 100%);
+    }
+    button, input, select, textarea { font: inherit; }
+    .app { max-width: none; margin-left: 290px; padding: 26px 34px 32px; min-height:100vh; }
+    header {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 0 22px;
+      position: sticky; top: 0; z-index: 5; backdrop-filter: blur(18px);
+      background: linear-gradient(rgba(248,247,244,.94), rgba(248,247,244,.78));
+      border-bottom: 1px solid rgba(36,31,23,.06);
+    }
+    header::before { content:"¡Buenos días, José Luis!"; display:block; font-size: clamp(24px, 3vw, 38px); font-weight: 900; letter-spacing:-.04em; }
+    header > img, header h1, header .subtitle { display:none; }
+    header > div::after { content:"CRM Comercial 2.0 · Bazar de Prefabricados"; color:var(--muted); font-weight:600; }
+    .tabs {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 270px; z-index: 20;
+      display: flex; flex-direction: column; gap: 8px; padding: 18px 14px;
+      background: radial-gradient(circle at 40% 0%, rgba(168,137,85,.22), transparent 26rem), linear-gradient(180deg, #171611, #262016 55%, #14130f);
+      border-right: 1px solid rgba(255,255,255,.08); box-shadow: 16px 0 50px rgba(0,0,0,.18);
+    }
+    .tabs::before {
+      content:""; display:block; height:140px; margin: 0 6px 22px;
+      background: url('/assets/logo_basic.png') center/contain no-repeat;
+      filter: drop-shadow(0 12px 26px rgba(0,0,0,.35));
+    }
+    .tabs::after {
+      content:"Plan Comercial 2026\A Cotizaciones logradas  $25,000,000\A Logradas / proyecci?n  48%"; white-space:pre-line;
+      margin-top:auto; padding:16px; border-radius:16px; color:#fff;
+      background: linear-gradient(135deg, rgba(168,137,85,.98), rgba(86,67,38,.9));
+      box-shadow: 0 12px 30px rgba(0,0,0,.22); font-size:13px; line-height:1.8; font-weight:700;
+    }
+    .tabs button {
+      width:100%; display:flex; align-items:center; gap:12px; border:1px solid transparent; color:rgba(255,255,255,.86);
+      background: transparent; border-radius: 12px; padding: 13px 14px; font-size: 15px; font-weight: 800; cursor:pointer;
+      text-align:left; transition: all .18s ease;
+    }
+    .tabs button:nth-child(1)::before { content:"⌂"; }
+    .tabs button:nth-child(2)::before { content:"👥"; }
+    .tabs button:nth-child(3)::before { content:"＋"; }
+    .tabs button:nth-child(4)::before { content:"▤"; }
+    .tabs button:nth-child(5)::before { content:"◷"; }
+    .tabs button:nth-child(6)::before { content:"☁"; }
+    .tabs button:hover { background:rgba(255,255,255,.08); transform: translateX(2px); }
+    .tabs button.active { background: linear-gradient(135deg, #c39a5d, #8f754d); color:#fff; box-shadow:0 14px 28px rgba(0,0,0,.22); border-color:rgba(255,255,255,.16); }
+    .view { display: none; animation: fadeUp .22s ease; }
+    .view.active { display: block; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .grid { display: grid; gap: 16px; }
+    .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card {
+      background: rgba(255,255,255,.88); border: 1px solid var(--line);
+      border-radius: 18px; padding: 20px; box-shadow: var(--shadow-soft); backdrop-filter: blur(20px);
+    }
+    .card:hover { box-shadow: var(--shadow); }
+    .metric { font-size: 38px; font-weight: 900; color: var(--ink); line-height: 1; letter-spacing:-.04em; }
+    .metric::after { content:""; display:block; width:70px; height:22px; margin-top:12px; border-bottom:3px solid rgba(143,117,77,.65); border-radius:50%; transform:skewX(-35deg); opacity:.7; }
+    .label { color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase; margin-top: 8px; letter-spacing:.05em; }
+    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 24px 0 12px; }
+    h2 { margin: 0; font-size: 22px; letter-spacing:-.03em; }
+    .row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    label { display: block; color: #6b665c; font-size: 11px; font-weight: 900; margin: 0 0 7px; text-transform: uppercase; letter-spacing:.06em; }
+    input, select, textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 12px;
+      padding: 13px 14px; background: var(--input); color: var(--ink); min-height: 46px; outline:none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8); transition:border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: rgba(143,117,77,.55); box-shadow: 0 0 0 4px rgba(143,117,77,.12); }
+    textarea { min-height: 92px; resize: vertical; }
+    .btn {
+      border: 0; border-radius: 12px; padding: 12px 16px; background: linear-gradient(135deg, #b7955d, #80673f);
+      color: #fff; font-weight: 900; cursor: pointer; min-height: 46px; box-shadow:0 10px 22px rgba(128,103,63,.22);
+      transition: transform .15s, box-shadow .15s, filter .15s; text-decoration:none;
+    }
+    .btn:hover { transform: translateY(-1px); filter:brightness(1.03); box-shadow:0 14px 26px rgba(128,103,63,.26); }
+    .btn.secondary { background: #fff; border: 1px solid var(--line); color: var(--ink); box-shadow:none; }
+    .btn.full { width: 100%; }
+    .search { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+    .client-list { display: grid; gap: 10px; margin-top: 14px; }
+    .client-item {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+      background: rgba(255,255,255,.78); border: 1px solid var(--line); border-radius: 16px; padding: 14px;
+      box-shadow: 0 8px 18px rgba(36,31,23,.05);
+    }
+    .client-name { font-weight: 900; font-size: 17px; letter-spacing:-.02em; }
+    .small { color: var(--muted); font-size: 13px; margin-top: 3px; }
+    .quote-total { font-size: 26px; color: var(--brand); font-weight: 900; }
+    .badge { display: inline-block; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 900; color: white; background: #777; white-space: nowrap; }
+    .CostaSur { background: #5dad55; }
+    .CostaCentroyVallesdelNorte { background: var(--blue); }
+    .CostaNorteyFrontera { background: var(--orange); }
+    .CentroySierraCentro { background: var(--purple); }
+    .SierraySur { background: #8b6f3d; }
+    .Sinzona { background: #777; }
+    .timeline { display: grid; gap: 12px; }
+    .event { border-left: 4px solid var(--brand); padding: 12px 14px; background: #fff; border-radius: 0 14px 14px 0; box-shadow: 0 8px 18px rgba(36,31,23,.05); }
+    .event strong { color: var(--brand); }
+    .event-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .event-actions .btn { min-height: 36px; padding: 8px 10px; font-size: 12px; }
+    .alert { border-color: rgba(239,91,91,.35); background: rgba(239,91,91,.08); }
+    .stage-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+    .stage { border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: rgba(255,255,255,.82); box-shadow: 0 8px 18px rgba(36,31,23,.05); }
+    .stage b { display: block; font-size: 24px; color: var(--brand); }
+    .hint { color: var(--muted); font-size: 14px; line-height: 1.45; }
+    .hidden { display: none !important; }
+    .import-box { display: grid; gap: 12px; }
+    .map-layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(330px, .85fr); gap: 16px; align-items: stretch; }
+    .map-panel { min-height: 570px; position: relative; overflow: hidden; }
+    .map-wrap { position: relative; width: 100%; min-height: 528px; background: linear-gradient(135deg, rgba(143,117,77,.09), rgba(255,255,255,.65)); border: 1px solid var(--line); border-radius: 16px; }
+    .nayarit-map { width: 100%; height: 528px; display: block; }
+    .mun-shape { stroke: rgba(255,255,255,.86); stroke-width: 1.8; cursor: pointer; transition: opacity .18s, stroke-width .18s, filter .18s; }
+    .mun-shape:hover { opacity: .96; stroke-width: 3; filter: brightness(1.08); }
+    .mun-outline { fill: none; stroke: rgba(143,117,77,.65); stroke-width: 2.8; pointer-events: none; }
+    .map-label { fill: rgba(36,31,23,.45); font-size: 11px; font-weight: 900; pointer-events: none; }
+    .mun-label { fill: #1e1b16; font-size: 10px; font-weight: 900; text-anchor: middle; paint-order: stroke; stroke: rgba(255,255,255,.82); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+    .map-point { cursor: pointer; filter: drop-shadow(0 4px 7px rgba(0,0,0,.28)); }
+    .map-point circle { stroke: #fff; stroke-width: 2; }
+    .map-point.alert-point circle { stroke: #fff; stroke-width: 2.4; }
+    .map-point.alert-point .pulse { fill: none; stroke: var(--danger); stroke-width: 2; opacity: .75; }
+    .map-card { min-height: 430px; display: grid; align-content: start; gap: 12px; }
+    .map-client-title { font-size: 24px; font-weight: 900; color: var(--brand); line-height: 1.08; letter-spacing:-.03em; }
+    .map-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .legend-dot { width: 11px; height: 11px; border-radius: 99px; display: inline-block; margin-right: 5px; vertical-align: middle; }
+    .map-alert-chip { color: white; background: var(--danger); border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 900; display: inline-block; }
+    #dashboard::before {
+      content:"Actividad comercial de hoy"; display:block; margin-bottom:10px; color: var(--muted); font-weight:700;
+    }
+    @media (max-width: 980px) {
+      .app { margin-left:0; padding: 16px; padding-bottom: 96px; }
+      header::before { font-size: 27px; }
+      .tabs { top:auto; bottom:0; width:auto; right:0; height:auto; display:grid; grid-template-columns:repeat(6, 1fr); padding:8px; border-right:0; border-top:1px solid rgba(255,255,255,.12); }
+      .tabs::before, .tabs::after { display:none; }
+      .tabs button { justify-content:center; font-size:11px; padding:10px 4px; gap:4px; flex-direction:column; }
+      .cards, .row, .row3, .stage-grid { grid-template-columns: 1fr; }
+      .map-layout { grid-template-columns: 1fr; }
+      .map-panel, .map-card { min-height: auto; }
+      .map-wrap { min-height: 430px; }
+      .nayarit-map { height: 430px; }
+      .search { grid-template-columns: 1fr; }
+      .client-item { grid-template-columns: 1fr; }
+    }
+
+  
+/* === BDP CRM 2.0 PRO — visual upgrade matching approved mockup === */
+:root{--brand:#8f754d;--brand2:#b58e55;--nav:#181712;--nav2:#292216;--bg:#f6f4f0;--card:#fff;--text:#141414;--muted:#6f706d;--line:rgba(31,27,20,.10);--green:#54a650;--red:#ef5d5d;--yellow:#f3bf51;--shadow:0 14px 34px rgba(31,27,20,.10);--radius:18px;}
+body{background:radial-gradient(circle at 78% 0%,rgba(143,117,77,.18),transparent 33rem),linear-gradient(145deg,#fbfaf8 0%,#f1eee8 100%);font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;}
+body::before{opacity:.18;mask-image:none;background-image:radial-gradient(rgba(31,27,20,.12) 1px,transparent 1px);background-size:26px 26px;}
+.app{margin-left:300px;padding:28px 34px 34px;}
+header{position:sticky;top:0;z-index:10;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:0 0 22px!important;background:linear-gradient(rgba(246,244,240,.96),rgba(246,244,240,.78))!important;backdrop-filter:blur(18px);border-bottom:1px solid rgba(31,27,20,.05)!important;}
+header::before{display:none!important} header>img.logo{display:block!important;height:0!important;width:0!important;opacity:0!important} header h1,header .subtitle{display:block!important} header h1{margin:0;font-size:30px;font-weight:950;letter-spacing:-.05em;} header .subtitle{margin-top:4px;color:var(--muted);font-weight:600}.top-actions{display:flex;align-items:center;gap:16px;color:#111}.date-chip{font-weight:800;font-size:14px}.icon-btn{width:42px;height:42px;border:0;border-radius:14px;background:#fff;box-shadow:0 10px 24px rgba(31,27,20,.08);display:grid;place-items:center;font-size:20px}.brand-chip{height:56px;min-width:285px;background:linear-gradient(135deg,#1a1711,#322718);border-radius:10px;box-shadow:0 12px 25px rgba(0,0,0,.18);background-image:url('/assets/logo_basic.png'),linear-gradient(135deg,#1a1711,#322718);background-size:230px auto,cover;background-position:center;background-repeat:no-repeat;}
+.tabs{width:300px;padding:22px 16px;background:radial-gradient(circle at 40px 20px,rgba(188,151,87,.22),transparent 14rem),linear-gradient(180deg,#14130f,#292218 55%,#13120f);}.tabs::before{height:145px;margin:0 8px 20px;background-image:url('/assets/logo_basic.png');background-size:contain}.tabs button{font-size:15px;border-radius:12px;padding:13px 14px}.tabs button.active{background:linear-gradient(135deg,#c79d5f,#8f754d);box-shadow:0 18px 35px rgba(0,0,0,.28)}.tabs button::before{font-size:20px;width:22px;text-align:center}.tabs button:nth-child(1)::before{content:'⌂'}.tabs button:nth-child(2)::before{content:'👥'}.tabs button:nth-child(3)::before{content:'🎯'}.tabs button:nth-child(4)::before{content:'📅'}.tabs button:nth-child(5)::before{content:'📄'}.tabs button:nth-child(6)::before{content:'🚚'}.tabs button:nth-child(7)::before{content:'🏭'}.tabs button:nth-child(8)::before{content:'💰'}.tabs button:nth-child(9)::before{content:'📍'}.tabs button:nth-child(10)::before{content:'📊'}.tabs button:nth-child(11)::before{content:'📈'}.tabs button:nth-child(12)::before{content:'🗂'}.tabs button:nth-child(13)::before{content:'⚙'}
+.tabs::after{content:'Plan Comercial 2026\A Cotizaciones logradas  $25,000,000\A Logradas / proyecci?n  48%\A ███████░░░';font-size:13px;margin-top:auto;background:linear-gradient(135deg,rgba(190,151,87,.95),rgba(95,75,42,.92));}
+.card{background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:blur(20px)}.section-title{margin:14px 0 12px}.section-title h2{font-size:21px;font-weight:950;letter-spacing:-.04em}.hero-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;margin:6px 0 18px}.hero-item{display:grid;grid-template-columns:54px 1fr;gap:14px;align-items:center;padding:18px 24px;border-right:1px solid var(--line)}.hero-item:last-child{border-right:0}.hero-icon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#f4eadc;color:var(--brand);font-size:24px}.hero-num{font-size:29px;font-weight:950;letter-spacing:-.04em}.hero-label{font-size:13px;color:var(--muted);font-weight:700}.kpi-cards{grid-template-columns:repeat(5,1fr)!important;margin-bottom:14px}.kpi-card{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:14px;min-height:132px;position:relative;overflow:hidden}.kpi-card::after{content:'';position:absolute;right:18px;bottom:14px;width:110px;height:34px;border-bottom:3px solid rgba(143,117,77,.55);border-radius:50%;transform:skewX(-35deg);opacity:.55}.kpi-icon{width:54px;height:54px;border-radius:17px;display:grid;place-items:center;background:linear-gradient(135deg,#9a7b4c,#6c5636);color:white;font-size:27px;box-shadow:0 12px 24px rgba(107,86,54,.25)}.kpi-title{font-size:12px;text-transform:uppercase;color:#3b382f;font-weight:950}.kpi-value{font-size:30px;font-weight:950;letter-spacing:-.05em}.kpi-change{font-size:13px;color:var(--green);font-weight:900}.dash-grid{display:grid;grid-template-columns:1fr 1.22fr;gap:16px}.bar-chart{height:260px;display:flex;align-items:end;gap:18px;padding:18px 12px 0;border-top:1px solid var(--line);background:linear-gradient(to top,rgba(31,27,20,.06) 1px,transparent 1px);background-size:100% 52px}.bar{flex:1;min-width:18px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,#b98f55,#8f754d);position:relative}.bar span{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);font-size:12px;color:#333}.bar.active::before{content:'Junio 2026\A $2,430,000';white-space:pre;position:absolute;top:-70px;left:50%;transform:translateX(-50%);background:#181610;color:white;padding:10px 12px;border-radius:8px;font-size:12px;font-weight:800}.map-layout{grid-template-columns:minmax(0,1fr) 410px}.map-panel{min-height:422px}.map-wrap{min-height:374px;background:linear-gradient(135deg,rgba(143,117,77,.07),rgba(255,255,255,.7))}.nayarit-map{height:374px}.map-card{min-height:422px}.dashboard-bottom{display:grid;grid-template-columns:1fr 1fr 1.12fr;gap:16px;margin-top:14px}.mini-list{display:grid;gap:0}.mini-row{display:grid;grid-template-columns:70px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center}.mini-row:last-child{border-bottom:0}.pill{border-radius:999px;padding:6px 10px;font-size:11px;font-weight:950}.pill.green{background:#e4f3e4;color:#318331}.pill.gold{background:#f3eadb;color:#8f754d}.pill.blue{background:#e2edf8;color:#3976b6}.client-item{background:#fff;border-radius:16px;box-shadow:0 8px 20px rgba(31,27,20,.06);transition:.15s}.client-item:hover{transform:translateY(-1px);box-shadow:0 16px 32px rgba(31,27,20,.10)}.client-name{letter-spacing:-.03em}.btn{background:linear-gradient(135deg,#b89157,#80643d);border-radius:12px;box-shadow:0 12px 25px rgba(128,100,61,.22)}.btn.secondary{background:#fff;color:#141414;border:1px solid var(--line)}.stage-grid{grid-template-columns:repeat(6,1fr)}.stage b{color:var(--brand)}.module-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.module-card{min-height:190px}.module-card h3{margin:0 0 8px;font-size:20px}.module-card .big{font-size:38px;font-weight:950;letter-spacing:-.05em;color:var(--brand)}.module-note{color:var(--muted);font-weight:600;line-height:1.45}.empty-premium{display:grid;place-items:center;text-align:center;min-height:360px}.empty-premium img{width:120px;opacity:.88;filter:drop-shadow(0 10px 20px rgba(31,27,20,.18))}.empty-premium h2{font-size:28px}.badge{font-weight:950}.quote-total{font-size:28px}.event{position:relative;border-left:0;padding-left:34px}.event::before{content:'';position:absolute;left:10px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 5px rgba(143,117,77,.13)}
+@media(max-width:1180px){.kpi-cards{grid-template-columns:repeat(2,1fr)!important}.dash-grid,.dashboard-bottom,.module-grid{grid-template-columns:1fr}.map-layout{grid-template-columns:1fr}}@media(max-width:980px){.app{margin-left:0;padding:16px 16px 104px}.brand-chip,.date-chip{display:none}.hero-strip{grid-template-columns:1fr 1fr}.hero-item{border-bottom:1px solid var(--line)}.tabs{width:auto}.tabs button:nth-child(n+7){display:none}.cards{grid-template-columns:1fr!important}.hero-strip{margin-top:8px}}
+
+/* Ajustes solicitados BDP 2.1 */
+.dashboard-priority{display:grid;grid-template-columns:1.45fr .55fr;gap:16px;align-items:start}.radar-super{min-height:560px}.radar-super .map-wrap{min-height:500px}.radar-super .nayarit-map{height:500px}.sales-compact .bar-chart{height:210px}.stage-filter-top{display:grid;grid-template-columns:1fr 260px;gap:16px;align-items:end;margin:10px 0 16px}.stage-filter-top .stage-grid{grid-template-columns:repeat(6,1fr)}.stage-filter-top .card{padding:16px}.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.monthly-table{width:100%;border-collapse:collapse}.monthly-table th,.monthly-table td{padding:10px;border-bottom:1px solid var(--line);text-align:left}.monthly-table input{min-height:38px;padding:8px 10px}.modal-backdrop{position:fixed;inset:0;background:rgba(20,18,13,.58);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center;padding:24px}.modal-backdrop.active{display:flex}.modal{width:min(1120px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:24px;box-shadow:0 30px 100px rgba(0,0,0,.35);border:1px solid rgba(143,117,77,.22)}.modal-header{position:sticky;top:0;z-index:2;background:linear-gradient(135deg,#fff,#f7f3eb);border-bottom:1px solid var(--line);padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}.modal-body{padding:22px}.modal-close{width:42px;height:42px;border-radius:14px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:900}.stage-click{cursor:pointer}.stage-click:hover{transform:translateY(-2px);background:#fff7eb}.config-note{background:linear-gradient(135deg,rgba(143,117,77,.12),rgba(255,255,255,.8));border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:16px}
+@media(max-width:1180px){.dashboard-priority,.stage-filter-top,.settings-grid{grid-template-columns:1fr}.radar-super .map-wrap,.radar-super .nayarit-map{min-height:360px;height:360px}.stage-filter-top .stage-grid{grid-template-columns:repeat(2,1fr)}}
+
+button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;cursor:pointer;padding:22px}
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <img src="/assets/logo_basic.png" class="logo" alt="Bazar de Prefabricados">
+      <div>
+        <h1 id="welcomeTitle">Buenos días</h1>
+        <div class="subtitle" id="welcomeSubtitle">Aquí tienes el resumen de tu actividad comercial.</div>
+      </div>
+      <div class="top-actions">
+        <div class="date-chip" id="dateChip"></div>
+        <button class="icon-btn" title="Buscar" onclick="goSearch()">⌕</button>
+        <button class="icon-btn" title="Notificaciones" onclick="goAlerts()">🔔</button>
+        <button class="icon-btn" title="Calendario" onclick="goAgenda()">🗓</button>
+        <div class="brand-chip" aria-label="Bazar de Prefabricados"></div>
+      </div>
+    </header>
+
+    <main>
+      <section id="dashboard" class="view active">
+        <div class="hero-strip">
+          <div class="hero-item"><div class="hero-icon">◎</div><div><div class="hero-num" id="hFollow">0</div><div class="hero-label">Seguimientos hoy</div></div></div>
+          <div class="hero-item"><div class="hero-icon">▣</div><div><div class="hero-num" id="hQuotes">0</div><div class="hero-label">Cotizaciones pendientes</div></div></div>
+          <div class="hero-item"><div class="hero-icon">♨</div><div><div class="hero-num" id="hHot">0</div><div class="hero-label">Clientes calientes</div></div></div>
+          <div class="hero-item"><div class="hero-icon">✓</div><div><div class="hero-num" id="hVisit">0</div><div class="hero-label">Visitas / seguimientos</div></div></div>
+        </div>
+
+        <div class="grid kpi-cards cards">
+          <div class="card kpi-card"><div class="kpi-icon">👥</div><div><div class="kpi-title">Prospectos activos</div><div class="kpi-value" id="kTotal">0</div><div class="kpi-change">Base comercial</div></div></div>
+          <div class="card kpi-card"><div class="kpi-icon">$</div><div><div class="kpi-title">Cotizaciones del mes</div><div class="kpi-value" id="kSalesMonth">$0</div><div class="kpi-change" id="kSalesGoal">Elaboradas en el mes</div></div></div>
+          <div class="card kpi-card"><div class="kpi-icon">📄</div><div><div class="kpi-title">Cotizaciones</div><div class="kpi-value" id="kQuotes">0</div><div class="kpi-change" style="color:#f28b2c">pendientes</div></div></div>
+          <div class="card kpi-card"><div class="kpi-icon">📈</div><div><div class="kpi-title">Conversión</div><div class="kpi-value" id="kConv">0%</div><div class="kpi-change">Clientes activos</div></div></div>
+          <div class="card kpi-card"><div class="kpi-icon">🏁</div><div><div class="kpi-title">Cotizaciones logradas</div><div class="kpi-value" id="kAnnualPct">0%</div><div class="kpi-change" id="kAnnualTxt">Logradas / proyecci?n</div></div></div>
+        </div>
+
+        <div class="stage-filter-top">
+          <div>
+            <div class="section-title"><h2>Etapa comercial / embudo</h2><span class="hint">Clasifica rápido y localiza clientes por estado</span></div>
+            <div class="stage-grid" id="stageGrid"></div>
+          </div>
+          <div class="card">
+            <label>Filtrar radar y clientes por etapa</label>
+            <select id="stageFilter">
+              <option value="">Todas las etapas</option>
+              <option>Prospecto nuevo</option>
+              <option>Contactado</option>
+              <option>Cotización enviada</option>
+              <option>Negociación</option>
+              <option>Cliente activo</option>
+              <option>Cliente perdido</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section-title"><h2>Radar Comercial - Nayarit</h2><span class="badge Sinzona" id="mapAlertCount">0 alertas</span></div>
+        <div class="dashboard-priority">
+          <div class="map-layout radar-super">
+            <div class="card map-panel">
+              <div class="map-wrap">
+                <svg class="nayarit-map" viewBox="0 0 560 760" role="img" aria-label="Mapa municipal comercial de Nayarit">
+                  <g id="municipalityShapes"></g>
+                  <path class="mun-outline" d="M267 22 L215 78 L184 126 L166 184 L123 237 L107 305 L82 360 L62 431 L76 507 L60 574 L84 644 L132 706 L191 686 L231 631 L286 604 L333 642 L383 612 L397 552 L442 503 L429 435 L477 384 L461 315 L421 270 L410 205 L365 158 L344 91 Z"/>
+                  <text class="map-label" x="270" y="43">NORTE</text><text class="map-label" x="340" y="722">SUR</text><text class="map-label" x="48" y="402">COSTA</text>
+                  <g id="mapPoints"></g>
+                </svg>
+              </div>
+              <div class="map-legend" id="mapLegend"></div>
+            </div>
+            <div class="card map-card" id="mapInfo"><div class="map-client-title">Selecciona un punto</div><div class="hint">Radar principal: ubica clientes por municipio, alerta y etapa comercial.</div></div>
+          </div>
+          <div class="card sales-compact">
+            <div class="section-title"><h2>Proyecciones comerciales</h2><button class="btn secondary" onclick="openSettingsSales()">Editar</button></div>
+            <div class="bar-chart" id="salesChart"></div>
+            <p class="hint">Estos montos son manuales y se actualizan en Configuración.</p>
+          </div>
+        </div>
+
+        <div class="dashboard-bottom">
+          <div class="card"><div class="section-title"><h2>Agenda del día</h2></div><div class="mini-list" id="agendaToday"><div class="mini-row"><b>Hoy</b><div><strong>Seguimientos por atender</strong><div class="small">Basado en fecha de seguimiento</div></div><span class="pill gold" id="agendaCount">0</span></div></div></div>
+          <div class="card"><div class="section-title"><h2>🔥 Clientes calientes</h2><button class="btn secondary" onclick="showClientsTab()">Ver todos</button></div><div class="mini-list" id="hotClients"></div></div>
+          <div class="card"><div class="section-title"><h2>Actividades recientes</h2><button class="btn secondary" onclick="goAlerts()">Ver alertas</button></div><div class="mini-list" id="recentActivities"></div></div>
+        </div>
+
+        <div class="grid cards hidden">
+          <div class="card"><div class="metric" id="mTotal">0</div><div class="label">Prospectos / clientes</div></div>
+          <div class="card"><div class="metric" id="mActivos">0</div><div class="label">Clientes activos</div></div>
+          <div class="card"><div class="metric" id="mCotizaciones">0</div><div class="label">Cotizaciones pendientes</div></div>
+          <div class="card"><div class="metric" id="mSeguimientos">0</div><div class="label">Seguimientos vencidos</div></div>
+        </div>
+        <div class="section-title" id="clientesPorZonaTitle"><h2>Clientes por zona</h2></div>
+        <div class="client-list" id="zoneClientList"></div>
+        <div class="section-title"><h2>Municipios</h2></div>
+        <div class="client-list" id="municipioList"></div>
+        <div class="section-title" id="alertasDashboard"><h2>Alertas</h2></div>
+        <div class="client-list" id="alertsList"></div>
+      </section>
+
+      <section id="clients" class="view">
+        <div class="search">
+          <div>
+            <label>Buscar por nombre, contacto, municipio, teléfono o WhatsApp</label>
+            <input id="searchInput" placeholder="Ej. Tepic, Ferretería, 311...">
+          </div>
+          <button class="btn" onclick="loadClients()">Buscar</button>
+        </div>
+        <div class="client-list" id="clientList"></div>
+        <div id="clientDetail" class="card hidden"></div>
+      </section>
+
+      <section id="quick" class="view">
+        <div class="card">
+          <h2>Captura rápida</h2>
+          <p class="hint">Pensado para celular: llena lo esencial y guarda. Luego se puede completar la ficha desde oficina.</p>
+          <form id="quickForm" class="grid">
+            <div><label>Nombre comercial</label><input name="nombre_comercial" required placeholder="Ferretería / Constructora / Distribuidor"></div>
+            <div class="row">
+              <div><label>Razón social para factura</label><input name="razon_social" placeholder="Nombre fiscal completo"></div>
+              <div><label>RFC</label><input name="rfc" style="text-transform:uppercase" placeholder="RFC con homoclave"></div>
+            </div>
+            <div class="row">
+              <div><label>Tipo persona fiscal</label><select name="tipo_persona_fiscal" id="quickTipoPersona"><option>Moral</option><option>Fisica</option></select></div>
+              <div><label>Régimen fiscal</label><input name="regimen_fiscal" id="quickRegimen" list="quickRegimenList" placeholder="Selecciona o escribe"><datalist id="quickRegimenList"></datalist></div>
+            </div>
+            <div class="row">
+              <div><label>Uso CFDI</label><input name="uso_cfdi" id="quickUsoCfdi" list="quickUsoCfdiList" placeholder="Selecciona o escribe"><datalist id="quickUsoCfdiList"></datalist></div>
+              <div><label>Método de pago</label><input name="metodo_pago" id="quickMetodoPago" list="quickMetodoPagoList" placeholder="Selecciona o escribe"><datalist id="quickMetodoPagoList"></datalist></div>
+            </div>
+            <div class="row">
+              <div><label>Código postal fiscal</label><input name="cp_fiscal" inputmode="numeric" placeholder="CP del domicilio fiscal"></div>
+              <div><label>Forma de pago</label><input name="forma_pago" id="quickFormaPago" list="quickFormaPagoList" placeholder="Selecciona o escribe"><datalist id="quickFormaPagoList"></datalist></div>
+            </div>
+            <div><label>Correo facturación</label><input name="correo_facturacion" type="email" placeholder="correo@empresa.com"></div>
+            <div><label>Domicilio fiscal</label><input name="domicilio_fiscal" placeholder="Calle, número, colonia, municipio, estado"></div>
+            <div class="row">
+              <div><label>Contacto</label><input name="contacto" placeholder="Nombre de la persona"></div>
+              <div><label>WhatsApp / teléfono</label><input name="whatsapp" inputmode="tel" placeholder="311..."></div>
+            </div>
+            <div class="row">
+              <div><label>Municipio</label><select name="municipio" id="quickMunicipio" required></select></div>
+              <div><label>Zona automática</label><input name="zona" id="quickZona" readonly></div>
+            </div>
+            <div><label>Localidad / colonia / punto de referencia</label><input name="localidad" placeholder="Ej. cabecera, zona centro, carretera, colonia..."></div>
+            <div class="row">
+              <div><label>Tipo cliente</label><select name="tipo_cliente"><option>Ferretería</option><option>Constructora</option><option>Distribuidor</option><option>Particular</option></select></div>
+              <div><label>Potencial</label><select name="potencial"><option value="A">A · alto volumen</option><option value="B">B · medio volumen</option><option value="C">C · bajo volumen</option></select></div>
+            </div>
+            <div class="row">
+              <div><label>Etapa</label><select name="etapa"><option>Prospecto nuevo</option><option>Contactado</option><option>Cotización enviada</option><option>Negociación</option><option>Cliente activo</option><option>Cliente perdido</option></select></div>
+              <div><label>Producto ofrecido</label><select name="productos_ofrecidos" id="quickProducto"></select></div>
+            </div>
+            <div class="row3">
+              <div><label>Precio ofrecido</label><input name="precio_ofrecido" type="number" step="0.01" inputmode="decimal"></div>
+              <div><label>Tipo contacto</label><select name="tipo_contacto"><option>Visita</option><option>WhatsApp</option><option>Llamada</option><option>Cotización</option><option>Correo</option></select></div>
+              <div><label>Seguimiento</label><input name="fecha_seguimiento" type="date"></div>
+            </div>
+            <div class="row">
+              <div><label>Información enviada</label><select name="info_enviada"><option value="">Pendiente de enviar</option><option>Catálogo enviado</option><option>Precios enviados</option><option>Catálogo y precios enviados</option></select></div>
+              <div><label>Fecha envío info</label><input name="fecha_info_enviada" type="date"></div>
+            </div>
+            <div><label>Comentarios / próxima acción</label><textarea name="comentarios" placeholder="Qué se habló, precios, objeciones, próximos pasos..."></textarea></div>
+            <button class="btn full">Guardar captura</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="interaction" class="view">
+        <div class="card">
+          <h2>Nueva interacción</h2>
+          <p class="hint">Para clientes ya registrados. El historial no se borra; cada contacto queda en la línea de tiempo.</p>
+          <form id="interactionForm" class="grid">
+            <div><label>Cliente</label><select name="client_id" id="interactionClient" required></select></div>
+            <div class="row">
+              <div><label>Fecha</label><input name="fecha" type="date" required></div>
+              <div><label>Hora</label><input name="hora" type="time"></div>
+            </div>
+            <div class="row">
+              <div><label>Tipo de contacto</label><select name="tipo_contacto"><option>WhatsApp</option><option>Llamada</option><option>Visita</option><option>Correo</option><option>Cotización</option></select></div>
+              <div><label>Mover etapa</label><select name="etapa"><option value="">Sin cambio</option><option>Prospecto nuevo</option><option>Contactado</option><option>Cotización enviada</option><option>Negociación</option><option>Cliente activo</option><option>Cliente perdido</option></select></div>
+            </div>
+            <div class="row">
+              <div><label>Producto ofrecido</label><select name="productos_ofrecidos" id="interactionProducto"></select></div>
+              <div><label>Precio ofrecido</label><input name="precio_ofrecido" type="number" step="0.01"></div>
+            </div>
+            <div><label>Comentarios</label><textarea name="comentarios"></textarea></div>
+            <div><label>Resultado obtenido</label><input name="resultado" placeholder="Ej. pidió cotización, comprará próxima semana..."></div>
+            <div class="row">
+              <div><label>Próxima acción</label><input name="proxima_accion"></div>
+              <div><label>Fecha seguimiento</label><input name="fecha_seguimiento" type="date"></div>
+            </div>
+            <button class="btn full">Guardar interacción</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="quote" class="view">
+        <div class="card">
+          <h2>Cotizador</h2>
+          <p class="hint">Calcula costo individual con material y flete por zona. Puedes ajustar precio, kilómetros y tarifa antes de guardar.</p>
+          <form id="quoteForm" class="grid">
+            <div>
+              <label>Cliente</label>
+              <input id="quoteClientSearch" list="quoteClientList" autocomplete="off" placeholder="Escribe el nombre o sus primeras letras" required>
+              <datalist id="quoteClientList"></datalist>
+              <select name="client_id" id="quoteClient" style="display:none"></select>
+              <div class="small" id="quoteClientSelected">Sin cliente seleccionado</div>
+            </div>
+            <div class="row">
+              <div><label>Producto</label><select name="producto" id="quoteProducto"></select></div>
+              <div><label>Cantidad de piezas</label><input name="cantidad" id="quoteCantidad" type="number" step="1" min="1" value="1000"></div>
+            </div>
+            <div class="row">
+              <div><label>Precio unitario planta</label><input name="precio_unitario" id="quotePrecio" type="number" step="0.01" inputmode="decimal"></div>
+              <div><label>Municipio</label><select name="municipio" id="quoteMunicipio"></select></div>
+            </div>
+            <div class="row">
+              <div><label>Zona automática</label><input name="zona" id="quoteZona" readonly></div>
+              <div><label>Tarifa flete por km</label><input name="tarifa_km" id="quoteTarifa" type="number" step="0.01" inputmode="decimal"></div>
+            </div>
+            <div class="row">
+              <div><label>Kilómetros de flete</label><input name="km_flete" id="quoteKm" type="number" step="0.1" value="0" inputmode="decimal"></div>
+              <div><label>Casetas de cobro</label><input name="casetas" id="quoteCasetas" type="number" step="0.01" value="0" inputmode="decimal"></div>
+            </div>
+            <div class="row">
+              <div><label>Fecha seguimiento</label><input name="fecha_seguimiento" type="date"></div>
+              <div><label>Nota flete</label><input name="nota_flete" placeholder="Ej. incluye autopista / sin casetas"></div>
+            </div>
+            <div class="row">
+              <div><label>¿Requiere factura?</label><select name="requiere_factura" id="quoteFactura"><option value="0">No</option><option value="1">Sí, desglosar IVA 16%</option></select></div>
+              <div><label>Nota fiscal</label><input readonly value="Si requiere factura, confirmar datos fiscales antes de emitir CFDI."></div>
+            </div>
+            <div class="row">
+              <div><label>Enviar cotización por correo</label><select name="enviar_correo" id="quoteEmail"><option value="0">No, solo generar PDF</option><option value="1">Sí, enviar a cliente y administrador</option></select></div>
+              <div><label>Correo administrador</label><input readonly value="bdprefabricados@hotmail.com"></div>
+            </div>
+            <div class="grid cards" id="quoteResult">
+              <div><label>Flete total</label><div class="quote-total">$0.00</div></div>
+              <div><label>Flete por pieza</label><div class="quote-total">$0.00</div></div>
+              <div><label>Costo individual</label><div class="quote-total">$0.00</div></div>
+              <div><label>Total cotizado</label><div class="quote-total">$0.00</div></div>
+            </div>
+            <div id="quotePreview" class="card hidden"></div>
+            <div><label>Comentarios para historial</label><textarea name="comentarios" id="quoteNote" placeholder="Ej. enviar por WhatsApp, revisar volumen, precio sujeto a ruta..."></textarea></div>
+            <button class="btn full">Previsualizar cotizacion</button>
+          </form>
+        </div>
+        <div class="section-title"><h2>Cotizaciones elaboradas / logradas</h2></div>
+        <div class="client-list" id="quoteList"></div>
+      </section>
+
+      <section id="tools" class="view">
+        <div class="card import-box">
+          <h2>Respaldos e importación</h2>
+          <p class="hint">La información se guarda localmente en esta computadora. Al iniciar, se crea un respaldo diario de la base.</p>
+          <a class="btn" href="/api/export.xlsx" style="text-align:center;text-decoration:none;">Exportar CRM a Excel</a>
+          <div>
+            <label>Importar nuevos registros desde Excel</label>
+            <input id="excelFile" type="file" accept=".xlsx">
+          </div>
+          <button class="btn secondary" onclick="importExcel()">Importar Excel</button>
+          <div id="toolMsg" class="hint"></div>
+        </div>
+        <div class="card import-box" style="margin-top:16px">
+          <h2>Reporte de cotizaciones</h2>
+          <p class="hint">Filtra por estatus y por mes para generar reporte en Excel o PDF.</p>
+          <div class="row">
+            <div><label>Estatus</label><select id="reportQuoteStatus"><option>Todas</option><option>Elaborada</option><option>Presentada al cliente</option><option>Cambios solicitados</option><option>En seguimiento</option><option>Aceptada / lista para pedido</option><option>Lograda</option><option>No aceptada</option><option>Cancelada</option></select></div>
+            <div><label>Mes</label><input id="reportQuoteMonth" type="month"></div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn" type="button" onclick="downloadQuoteReport('xlsx')">Generar Excel</button>
+            <button class="btn secondary" type="button" onclick="downloadQuoteReport('pdf')">Generar PDF</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="pedidos" class="view">
+        <div class="section-title"><h2>Pedidos</h2></div>
+        <div class="module-grid">
+          <button class="card module-card" type="button" onclick="showOrderGroup('open')"><h3>Pedidos abiertos</h3><div class="big" id="modPedidosAbiertos">0</div><p class="module-note">Cotizaciones en seguimiento o negociaci?n.</p></button>
+          <button class="card module-card" type="button" onclick="showOrderGroup('won')"><h3>Cotizaciones logradas</h3><div class="big" id="modPedidosLogrados">0</div><p class="module-note">Cotizaciones aceptadas para convertir en pedido.</p></button>
+          <button class="card module-card" type="button" onclick="showOrderGroup('lost')"><h3>No aceptadas</h3><div class="big" id="modPedidosNoAceptadas">0</div><p class="module-note">Expediente comercial para seguimiento futuro.</p></button>
+        </div>
+        <div class="card"><h2>Cotizaciones para decisi?n</h2><div id="ordersQuoteList" class="client-list"></div></div>
+      </section>
+      <section id="produccion" class="view">
+        <div class="section-title"><h2>Productos</h2></div>
+        <div class="card" id="productAdminCard" style="display:none;margin-bottom:16px">
+          <h2>Alta y edición de producto</h2>
+          <form id="productForm" class="grid">
+            <input type="hidden" name="id" id="product_id">
+            <div class="row"><div><label>Producto</label><input name="nombre" id="product_nombre" required></div><div><label>Medidas</label><input name="medidas" id="product_medidas" placeholder="Ej. 14 x 20 x 40 cm"></div></div>
+            <div class="row"><div><label>Resistencia</label><input name="resistencia" id="product_resistencia" placeholder="Ej. fc 100 kg/cm2"></div><div><label>Peso aproximado</label><input name="peso_aprox" id="product_peso" placeholder="Ej. 22.5 kg"></div></div>
+            <div class="row"><div><label>Precio unitario</label><input name="precio" id="product_precio" type="number" step="0.01"></div><div><label>Estado</label><select name="activo" id="product_activo"><option value="1">Activo</option><option value="0">Inactivo</option></select></div></div>
+            <button class="btn full">Guardar producto</button>
+          </form>
+        </div>
+        <div class="card"><p class="hint">Productos dados de alta para comercializaci?n y usados en cotizaciones.</p><div id="productList" class="client-list"></div></div>
+      </section>
+      <section id="rutas" class="view">
+        <div class="section-title"><h2>Rutas comerciales por zona</h2></div>
+        <div class="card"><p class="hint">Clientes agrupados por zona para planear visitas comerciales.</p><div id="routeList" class="client-list"></div></div>
+      </section>
+      <section id="reportes" class="view">
+        <div class="section-title"><h2>Reportes</h2></div>
+        <div class="module-grid">
+          <button class="card module-card" type="button" onclick="showReportGroup('clients')"><h3>Altas de clientes</h3><div class="big" id="modReportEmbudo">0</div><p class="module-note">Registros comerciales capturados.</p></button>
+          <button class="card module-card" type="button" onclick="showReportGroup('quotes')"><h3>Cotizaciones</h3><div class="big" id="modReportQuotes">0</div><p class="module-note">Cotizaciones elaboradas y logradas.</p></button>
+          <button class="card module-card" type="button" onclick="showReportGroup('followups')"><h3>Seguimientos</h3><div class="big" id="modReportFollow">0</div><p class="module-note">Contactos vencidos o por atender.</p></button>
+        </div>
+        <div class="card"><h2>Listado de reporte</h2><div id="reportList" class="client-list"></div></div>
+      </section>
+      <section id="configuracion" class="view">
+        <div class="section-title"><h2>Configuración general</h2><button class="btn" onclick="saveSettingsAll()">Guardar configuración</button></div>
+        <div class="config-note"><strong>Parámetros constantes del CRM.</strong> Aquí se actualizan ventas mensuales manuales, metas, usuario, costos, precios de productos y tarifas de flete. Los cambios alimentan Dashboard, Cotizaciones y reportes sin tocar tu base de clientes.</div>
+        <div class="settings-grid">
+          <div class="card">
+            <h2>Identidad / usuario</h2>
+            <div class="grid" id="settingsIdentity">
+              <div><label>Nombre de usuario</label><input id="set_user_name"></div>
+              <div><label>Puesto / rol</label><input id="set_user_role"></div>
+              <div><label>Empresa</label><input id="set_company_name"></div>
+              <div><label>URL o ruta de fotografía</label><input id="set_profile_photo" placeholder="Opcional"></div>
+              <div><label>Cotizaciones logradas de ventas</label><input id="set_annual_goal" type="number" step="0.01"></div>
+              <div><label>Elaboradas en el mes default</label><input id="set_monthly_goal_default" type="number" step="0.01"></div>
+              <div><label>Correo administrador cotizaciones</label><input id="set_quote_admin_email" type="email"></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Correo para cotizaciones</h2>
+            <p class="hint">Solo se usa si marcas enviar por correo al generar una cotizacion.</p>
+            <div class="grid">
+              <div><label>Servidor SMTP</label><input id="set_smtp_host" placeholder="smtp.office365.com"></div>
+              <div><label>Puerto SMTP</label><input id="set_smtp_port" placeholder="587"></div>
+              <div><label>Usuario correo</label><input id="set_smtp_user" placeholder="correo@empresa.com"></div>
+              <div><label>Contrasena / clave app</label><input id="set_smtp_password" type="password"></div>
+              <div><label>Correo remitente</label><input id="set_smtp_from_email" type="email" placeholder="correo@empresa.com"></div>
+              <div><label>Nombre remitente</label><input id="set_smtp_from_name" placeholder="BAZAR DE PREFABRICADOS"></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Costos base de materiales</h2>
+            <div class="grid">
+              <div><label>Cemento por tonelada</label><input id="set_material_cemento_ton" type="number" step="0.01"></div>
+              <div><label>Jal / góndola o m³</label><input id="set_material_jal_m3" type="number" step="0.01"></div>
+              <div><label>Mano de obra block 10×14×28</label><input id="set_mo_block_10_14_28" type="number" step="0.01"></div>
+              <div><label>Mano de obra block 14×20×40</label><input id="set_mo_block_14_20_40" type="number" step="0.01"></div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-grid" style="margin-top:16px">
+          <div class="card"><h2>Proyecciones comerciales manuales</h2><table class="monthly-table"><thead><tr><th>Mes</th><th>Venta acumulada</th><th>Meta</th></tr></thead><tbody id="monthlySalesRows"></tbody></table></div>
+          <div class="card"><h2>Precios y fletes</h2><div class="row"><div><h3>Productos</h3><div id="productPriceRows" class="grid"></div></div><div><h3>Tarifas por zona</h3><div id="freightRows" class="grid"></div></div></div></div>
+        </div>
+        <div class="card" id="usersAdminCard" style="margin-top:16px;display:none">
+          <div class="section-title" style="margin-top:0"><h2>Usuarios y permisos</h2><span class="badge CentroSierraCentro">Solo administrador</span></div>
+          <form id="userForm" class="grid">
+            <input type="hidden" name="id" id="user_id">
+            <div class="row">
+              <div><label>Usuario para entrar</label><input name="username" id="user_username" required placeholder="ej. vendedor1"></div>
+              <div><label>Nombre que aparecerá</label><input name="full_name" id="user_full_name" required placeholder="Nombre del vendedor"></div>
+            </div>
+            <div class="row">
+              <div><label>Tipo de acceso</label><select name="role" id="user_role"><option>Vendedor</option><option>Administrador</option></select></div>
+              <div><label>Contraseña</label><input name="password" id="user_password" type="password" placeholder="Nueva contraseña o dejar igual"></div>
+            </div>
+            <div class="row">
+              <div><label>Estado</label><select name="active" id="user_active"><option value="1">Activo</option><option value="0">Inactivo</option></select></div>
+              <button class="btn full">Guardar usuario</button>
+            </div>
+          </form>
+          <div class="client-list" id="usersList" style="margin-top:14px"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <nav class="tabs">
+    <button class="active" onclick="showView('dashboard', this)">Dashboard</button>
+    <button onclick="showView('clients', this)">Clientes</button>
+    <button onclick="showView('quick', this)">Captura clientes</button>
+    <button onclick="showView('interaction', this)">Agenda</button>
+    <button onclick="showView('quote', this)">Cotizaciones</button>
+    <button onclick="showView('pedidos', this)">Pedidos</button>
+    <button onclick="showView('produccion', this)">Productos</button>
+        <button onclick="showView('rutas', this)">Rutas</button>
+    <button onclick="showView('reportes', this)">Reportes</button>
+        <button onclick="showView('tools', this)">Documentos</button>
+    <button onclick="showView('configuracion', this)">Configuración</button>
+    <button onclick="logoutCRM()">Cerrar sesión</button>
+  </nav>
+
+  <div id="clientModal" class="modal-backdrop"><div class="modal"><div class="modal-header"><div><h2 id="clientModalTitle">Cliente</h2><div class="hint" id="clientModalSub"></div></div><button class="modal-close" onclick="closeClientModal()">×</button></div><div class="modal-body" id="clientModalBody"></div></div></div>
+
+  <script>
+    let OPTIONS = { municipios: {}, productos: {}, tarifas: {} };
+    let CLIENTS = [];
+    let CURRENT_CLIENT = null;
+    let CURRENT_USER = null;
+    let USERS = [];
+    let INACTIVITY_TIMER = null;
+    const INACTIVITY_LIMIT = 5 * 60 * 1000;
+    let ACTIVE_ORDER_GROUP = 'open';
+    let ACTIVE_REPORT_GROUP = 'clients';
+    let CONFIG = {settings:{}, monthlySales:[], productos:{}, tarifas:{}, months:[]};
+
+    const $ = (id) => document.getElementById(id);
+    const zoneClass = z => (z || 'Sin zona').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]/g, '');
+    const money = v => (v === null || v === undefined || v === '') ? '' : Number(v).toLocaleString('es-MX', { style:'currency', currency:'MXN' });
+    const cleanPhone = v => String(v || '').replace(/\D/g, '');
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const opt = (value, selected) => `<option value="${esc(value)}" ${String(value ?? '') === String(selected ?? '') ? 'selected' : ''}>${esc(value)}</option>`;
+    const zoneColors = {
+      'Costa Sur': '#1f8f73',
+      'Costa Centro y Valles del Norte': '#2d76a3',
+      'Costa Norte y Frontera': '#e36b1c',
+      'Centro y Sierra Centro': '#7a5ac8',
+      'Sierra y Sur': '#8b6f3d',
+      'Sin zona': '#777'
+    };
+    const municipioCoords = {
+      'Huajicori': [282, 86], 'Acaponeta': [230, 145], 'Tecuala': [168, 190], 'Rosamorada': [208, 256],
+      'Ruiz': [255, 314], 'Tuxpan': [171, 340], 'Santiago Ixcuintla': [212, 393], 'San Blas': [153, 462],
+      'Tepic': [286, 468], 'Xalisco': [291, 519], 'Santa María del Oro': [345, 544], 'San Pedro Lagunillas': [337, 612],
+      'Compostela': [238, 612], 'Bahía de Banderas': [186, 684], 'Del Nayar': [374, 270], 'La Yesca': [428, 435],
+      'Jala': [360, 651], 'Ahuacatlán': [386, 674], 'Ixtlán del Río': [412, 700], 'Amatlán de Cañas': [450, 715]
+    };
+    const municipalityShapes = [
+      ['Huajicori','M267 22 L344 91 L356 154 L314 178 L254 142 L215 78 Z',284,104],
+      ['Acaponeta','M215 78 L254 142 L230 197 L175 181 L184 126 Z',221,151],
+      ['Tecuala','M184 126 L175 181 L123 237 L101 214 L128 160 Z',153,190],
+      ['Rosamorada','M175 181 L230 197 L245 262 L197 296 L123 237 Z',190,245],
+      ['Ruiz','M230 197 L314 178 L350 236 L303 303 L245 262 Z',283,244],
+      ['Tuxpan','M123 237 L197 296 L185 355 L121 356 L107 305 Z',151,315],
+      ['Santiago Ixcuintla','M197 296 L245 262 L303 303 L291 370 L222 412 L185 355 Z',237,345],
+      ['San Blas','M121 356 L185 355 L222 412 L184 486 L98 477 L82 360 Z',143,428],
+      ['Tepic','M222 412 L291 370 L327 440 L304 502 L235 500 L184 486 Z',263,455],
+      ['Xalisco','M235 500 L304 502 L320 556 L260 569 L210 542 Z',272,529],
+      ['Santa María del Oro','M304 502 L381 486 L397 552 L353 595 L320 556 Z',351,542],
+      ['San Pedro Lagunillas','M320 556 L353 595 L333 642 L286 604 L260 569 Z',315,601],
+      ['Compostela','M98 477 L184 486 L210 542 L260 569 L231 631 L144 638 L76 507 Z',173,574],
+      ['Bahía de Banderas','M76 507 L144 638 L191 686 L132 706 L84 644 L60 574 Z',125,643],
+      ['Del Nayar','M314 178 L365 158 L410 205 L421 270 L389 330 L350 236 Z',377,246],
+      ['La Yesca','M389 330 L421 270 L461 315 L477 384 L429 435 L381 486 L327 440 Z',414,393],
+      ['Jala','M333 642 L353 595 L383 612 L382 661 L360 684 Z',359,641],
+      ['Ahuacatlán','M382 661 L383 612 L421 641 L414 687 L392 692 Z',400,657],
+      ['Ixtlán del Río','M360 684 L382 661 L392 692 L421 696 L397 728 Z',391,700],
+      ['Amatlán de Cañas','M421 641 L442 503 L397 552 L383 612 L421 696 L462 710 L487 653 Z',441,640]
+    ];
+
+    function waMessage(client, type) {
+      const name = client.contacto || client.nombre_comercial || '';
+      const catalog = `Hola ${name}, buen día. Soy de Bazar de Prefabricados. Gracias por recibirnos, le comparto la información de nuestros prefabricados y quedo atento para cotizarle según el volumen que necesite.`;
+      const prices = `Hola ${name}, buen día. Soy de Bazar de Prefabricados. Le doy seguimiento para revisar producto, volumen y precio para su zona.`;
+      const follow = `Hola ${name}, buen día. Le doy seguimiento a la información que revisamos. ¿Tiene alguna duda o le preparo cotización?`;
+      return type === 'precios' ? prices : type === 'seguimiento' ? follow : catalog;
+    }
+    function waLink(client) {
+      const phone = cleanPhone(client.whatsapp || client.telefono);
+      const number = phone.length === 10 ? '52' + phone : phone;
+      return number ? `https://wa.me/${number}` : '';
+    }
+    async function copyWa(type) {
+      if (!CURRENT_CLIENT) return;
+      const msg = waMessage(CURRENT_CLIENT, type);
+      try {
+        await navigator.clipboard.writeText(msg);
+        alert('Texto copiado. Ahora pégalo manualmente en WhatsApp.');
+      } catch {
+        prompt('Copia este texto:', msg);
+      }
+    }
+
+    function formData(form) {
+      const data = Object.fromEntries(new FormData(form).entries());
+      for (const k of ['precio_ofrecido', 'precio_actual_compra']) if (data[k] === '') delete data[k];
+      return data;
+    }
+
+    async function api(path, opts={}) {
+      const res = await fetch(path, opts);
+      if (res.status === 401) {
+        window.location.href = '/login';
+        throw new Error('Sesion terminada');
+      }
+      if (!res.ok) throw new Error((await res.json()).error || 'Error');
+      return res.json();
+    }
+
+    function resetInactivityTimer() {
+      clearTimeout(INACTIVITY_TIMER);
+      INACTIVITY_TIMER = setTimeout(() => {
+        alert('La sesion se cerro por 5 minutos sin actividad.');
+        window.location.href = '/api/logout';
+      }, INACTIVITY_LIMIT);
+    }
+
+    ['click','keydown','touchstart','scroll'].forEach(eventName =>
+      document.addEventListener(eventName, resetInactivityTimer, {passive:true})
+    );
+
+    function greetingByHour() {
+      const h = new Date().getHours();
+      if (h < 12) return 'Buenos días';
+      if (h < 19) return 'Buenas tardes';
+      return 'Buenas noches';
+    }
+
+    function refreshWelcome() {
+      const name = CURRENT_USER?.full_name || CURRENT_USER?.username || 'usuario';
+      $('welcomeTitle').textContent = `${greetingByHour()}, ${name}`;
+      $('welcomeSubtitle').textContent = CURRENT_USER?.role
+        ? `${CURRENT_USER.role} · CRM Comercial Bazar de Prefabricados`
+        : 'CRM Comercial Bazar de Prefabricados';
+      $('dateChip').textContent = new Date().toLocaleDateString('es-MX', {
+        weekday:'long', day:'2-digit', month:'long', year:'numeric'
+      });
+    }
+
+    async function loadCurrentUser() {
+      const data = await api('/api/me');
+      CURRENT_USER = data.user;
+      const admin = CURRENT_USER?.role === 'Administrador';
+      const configButton = [...document.querySelectorAll('.tabs button')].find(b => b.textContent.trim() === 'Configuración');
+      if (configButton) configButton.style.display = admin ? '' : 'none';
+      refreshWelcome();
+      resetInactivityTimer();
+    }
+
+    function showView(id, btn) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      $(id).classList.add('active');
+      btn.classList.add('active');
+      if (id === 'dashboard') loadDashboard();
+      if (id === 'clients') loadClients();
+      if (id === 'interaction') loadClientsForSelect();
+      if (id === 'quote') { loadQuoteClients(); loadQuotes(); }
+      if (['pedidos','produccion','rutas','reportes','tools'].includes(id)) loadDashboard();
+      if (id === 'configuracion') { loadSettingsPage(); loadUsers(); }
+    }
+
+    function showClientsTab() {
+      const btn = [...document.querySelectorAll('.tabs button')].find(b => b.textContent === 'Clientes');
+      if (!$('clients').classList.contains('active')) showView('clients', btn);
+    }
+
+    function normStage(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+    }
+
+    function selectedStage() {
+      return $('stageFilter')?.value || '';
+    }
+
+    function stageMatches(client, stage) {
+      return !stage || normStage(client.etapa) === normStage(stage);
+    }
+
+    function filteredDashboardClients(clients) {
+      const stage = selectedStage();
+      return (clients || []).filter(c => stageMatches(c, stage));
+    }
+
+    function renderZoneClients(clients) {
+      clients = filteredDashboardClients(clients);
+      const zones = ['Costa Sur', 'Costa Centro y Valles del Norte', 'Costa Norte y Frontera', 'Centro y Sierra Centro', 'Sierra y Sur', 'Sin zona'];
+      const grouped = {};
+      (clients || []).forEach(c => {
+        const z = c.zona || 'Sin zona';
+        if (!grouped[z]) grouped[z] = [];
+        grouped[z].push(c);
+      });
+      return zones.filter(z => grouped[z]?.length).map(z => `
+        <div class="card">
+          <div class="section-title" style="margin:0 0 10px"><h2>${z}</h2><span class="badge ${zoneClass(z)}">${grouped[z].length} cliente(s)</span></div>
+          <div class="hint" style="margin-bottom:8px">${esc((OPTIONS.regiones && OPTIONS.regiones[z]?.descripcion) || '')}</div>
+          ${OPTIONS.regiones && OPTIONS.regiones[z]?.municipios ? `<div class="small" style="margin-bottom:10px"><b>Municipios:</b> ${esc(OPTIONS.regiones[z].municipios.join(', '))}</div>` : ''}
+          <div class="client-list">
+            ${grouped[z].map(c => `
+              <div class="client-item">
+                <div>
+                  <div class="client-name">${esc(c.nombre_comercial)}</div>
+                  <div class="small">${esc(c.tipo_cliente || 'Sin tipo')} · ${esc(c.municipio || 'Sin municipio')} · ${esc(c.localidad || c.etapa || '')} · Potencial ${esc(c.potencial || '-')}</div>
+                  <div class="small">${esc(c.contacto || 'Sin contacto')} · ${esc(c.whatsapp || c.telefono || 'Sin teléfono')}</div>
+                </div>
+                <button class="btn secondary" onclick="openClient(${c.id})">Ver</button>
+              </div>`).join('')}
+          </div>
+        </div>`).join('') || '<div class="hint">Aún no hay clientes capturados.</div>';
+    }
+
+    function renderMunicipalityShapes() {
+      const byMunicipio = Object.fromEntries(Object.entries(OPTIONS.municipios || {}).map(([name, data]) => [name, data.zona || 'Sin zona']));
+      const munLabel = name => ({
+        'Bahía de Banderas': 'B. Banderas',
+        'Santiago Ixcuintla': 'Santiago',
+        'Santa María del Oro': 'Sta. Ma. Oro',
+        'San Pedro Lagunillas': 'S.P. Lag.',
+        'San Blas': 'San Blas',
+        'Ixtlán del Río': 'Ixtlán',
+        'Amatlán de Cañas': 'A. Cañas',
+      }[name] || name);
+      $('municipalityShapes').innerHTML = municipalityShapes.map(([name, path, lx, ly]) => {
+        const zone = byMunicipio[name] || 'Sin zona';
+        const color = zoneColors[zone] || '#777';
+        return `
+          <path class="mun-shape" d="${path}" fill="${color}" fill-opacity=".45" onclick="showMunicipality('${esc(name)}')">
+            <title>${esc(name)} · ${esc(zone)}</title>
+          </path>
+          <text class="mun-label" x="${lx}" y="${ly}">${esc(munLabel(name))}</text>
+        `;
+      }).join('');
+    }
+
+    function showMunicipality(name) {
+      const clients = filteredDashboardClients(window.DASHBOARD_CLIENTS || []).filter(c => c.municipio === name);
+      const zone = OPTIONS.municipios[name]?.zona || 'Sin zona';
+      $('mapInfo').innerHTML = `
+        <div class="map-client-title">${esc(name)}</div>
+        <span class="badge ${zoneClass(zone)}">${esc(zone)}</span>
+        <div class="hint">${esc((OPTIONS.regiones && OPTIONS.regiones[zone]?.descripcion) || 'Municipio de Nayarit')}</div>
+        <div><label>Clientes en este municipio</label><div>${clients.length} cliente(s)</div></div>
+        <div class="client-list">
+          ${clients.map(c => `<div class="client-item"><div><div class="client-name">${esc(c.nombre_comercial)}</div><div class="small">${esc(c.etapa || '')} · ${esc(c.contacto || 'Sin contacto')}</div></div><button class="btn secondary" onclick="openClient(${c.id})">Ver</button></div>`).join('') || '<div class="hint">Aún no hay clientes capturados aquí.</div>'}
+        </div>
+      `;
+    }
+
+    function alertReason(client, alertData) {
+      if (!alertData) return '';
+      if (client.etapa === 'Cotización enviada') return 'Cotización pendiente de respuesta';
+      if (!client.info_enviada) return 'Falta enviar información';
+      if (alertData.seguimiento) return `Seguimiento programado: ${alertData.seguimiento}`;
+      if (alertData.ultima_fecha) return `Sin contacto reciente desde: ${alertData.ultima_fecha}`;
+      return 'Requiere revisión';
+    }
+
+    function renderMap(clients, alerts) {
+      const visible = filteredDashboardClients(clients);
+      window.DASHBOARD_CLIENTS = clients || [];
+      const alertById = new Map((alerts || []).map(a => [String(a.id), a]));
+      const counts = {};
+      const points = visible.map((client) => {
+        const base = municipioCoords[client.municipio] || [260, 350];
+        const key = client.municipio || 'Sin municipio';
+        counts[key] = (counts[key] || 0) + 1;
+        const offset = counts[key] - 1;
+        const angle = offset * 1.9;
+        const radius = Math.min(28, offset * 7);
+        const x = base[0] + Math.cos(angle) * radius;
+        const y = base[1] + Math.sin(angle) * radius;
+        const hasAlert = alertById.has(String(client.id));
+        const color = zoneColors[client.zona || 'Sin zona'] || '#777';
+        return { client, x, y, hasAlert, color, alertData: alertById.get(String(client.id)) };
+      });
+      $('mapPoints').innerHTML = points.map((p, idx) => `
+        <g class="map-point ${p.hasAlert ? 'alert-point' : ''}" onclick="showMapClient(${idx})" tabindex="0">
+          ${p.hasAlert ? `<circle class="pulse" cx="${p.x}" cy="${p.y}" r="16"></circle>` : ''}
+          <circle cx="${p.x}" cy="${p.y}" r="${p.hasAlert ? 9 : 7}" fill="${p.color}"></circle>
+          <title>${esc(p.client.nombre_comercial)} · ${esc(p.client.municipio || '')}</title>
+        </g>
+      `).join('');
+      window.MAP_POINTS = points;
+      const alertCount = points.filter(p => p.hasAlert).length;
+      $('mapAlertCount').textContent = `${alertCount} alerta(s)`;
+      $('mapAlertCount').className = `badge ${alertCount ? 'Sinzona' : 'CostaSur'}`;
+      $('mapLegend').innerHTML = Object.entries(zoneColors).filter(([z]) => z !== 'Sin zona').map(([z, color]) =>
+        `<span class="small"><span class="legend-dot" style="background:${color}"></span>${esc(z)}</span>`
+      ).join('') + `<span class="small"><span class="legend-dot" style="background:var(--danger);border:2px solid white"></span>Alerta</span>`;
+      if (points.length) showMapClient(0); else $('mapInfo').innerHTML = '<div class="map-client-title">Sin clientes para mostrar</div><div class="hint">Captura clientes con municipio para verlos en el mapa.</div>';
+    }
+
+    function showMapClient(index) {
+      const point = (window.MAP_POINTS || [])[index];
+      if (!point) return;
+      const c = point.client;
+      const reason = alertReason(c, point.alertData);
+      $('mapInfo').innerHTML = `
+        <div class="map-client-title">${esc(c.nombre_comercial)}</div>
+        ${point.hasAlert ? `<div class="map-alert-chip">${esc(reason)}</div>` : '<span class="badge CostaSur">Sin alerta crítica</span>'}
+        <div class="grid" style="gap:8px">
+          <div><label>Municipio / localidad</label><div>${esc(c.municipio || '-')} · ${esc(c.localidad || 'Cabecera municipal')}</div></div>
+          <div><label>Zona</label><span class="badge ${zoneClass(c.zona)}">${esc(c.zona || 'Sin zona')}</span></div>
+          <div><label>Etapa</label><div>${esc(c.etapa || '-')}</div></div>
+          <div><label>Contacto</label><div>${esc(c.contacto || 'Sin contacto')}</div></div>
+          <div><label>WhatsApp / teléfono</label><div>${esc(c.whatsapp || c.telefono || 'Sin teléfono')}</div></div>
+          <div><label>Potencial</label><div>${esc(c.potencial || '-')}</div></div>
+        </div>
+        <div class="row" style="margin-top:4px">
+          <button class="btn" onclick="openClient(${c.id})">Abrir ficha</button>
+          <button class="btn secondary" onclick="quoteForClient(${c.id})">Cotizar</button>
+        </div>
+      `;
+    }
+
+    function fillSelect(select, values, blank='') {
+      select.innerHTML = blank ? `<option value="">${blank}</option>` : '';
+      values.forEach(v => select.insertAdjacentHTML('beforeend', `<option>${v}</option>`));
+    }
+
+    function satOption(row) {
+      const value = `${row[0]} - ${row[1]}`;
+      return `<option value="${esc(value)}"></option>`;
+    }
+
+    function fillDataList(inputId, listId, rows, selected='') {
+      const input = $(inputId);
+      const list = $(listId);
+      if (input && selected) input.value = selected;
+      if (list) list.innerHTML = (rows || []).map(r => satOption(r)).join('');
+    }
+
+    function fillSatCatalogs(prefix, selectedRegimen='', selectedUso='', selectedMetodo='', selectedForma='') {
+      const tipo = $(prefix + 'TipoPersona')?.value || 'Moral';
+      const sat = OPTIONS.sat || {regimenes:{}, usos_cfdi:{}, metodos_pago:[], formas_pago:[]};
+      fillDataList(prefix + 'Regimen', prefix + 'RegimenList', sat.regimenes?.[tipo] || [], selectedRegimen);
+      fillDataList(prefix + 'UsoCfdi', prefix + 'UsoCfdiList', sat.usos_cfdi?.[tipo] || [], selectedUso);
+      fillDataList(prefix + 'MetodoPago', prefix + 'MetodoPagoList', sat.metodos_pago || [], selectedMetodo);
+      fillDataList(prefix + 'FormaPago', prefix + 'FormaPagoList', sat.formas_pago || [], selectedForma);
+    }
+
+    async function loadOptions() {
+      OPTIONS = await api('/api/options');
+      const municipios = Object.keys(OPTIONS.municipios);
+      const productos = Object.keys(OPTIONS.productos);
+      fillSelect($('quickMunicipio'), municipios, 'Selecciona municipio');
+      fillSelect($('quickProducto'), productos, 'Selecciona producto');
+      fillSelect($('interactionProducto'), productos, 'Selecciona producto');
+      fillSelect($('quoteProducto'), productos, 'Selecciona producto');
+      fillSelect($('quoteMunicipio'), municipios, 'Selecciona municipio');
+      fillSatCatalogs('quick');
+      renderMunicipalityShapes();
+      $('quickMunicipio').addEventListener('change', () => {
+        $('quickZona').value = OPTIONS.municipios[$('quickMunicipio').value]?.zona || '';
+      });
+      $('quickTipoPersona')?.addEventListener('change', () => fillSatCatalogs('quick'));
+      $('quoteMunicipio').addEventListener('change', quoteZone);
+      $('quoteProducto').addEventListener('change', quoteProduct);
+      $('quoteFactura')?.addEventListener('change', calcQuote);
+      ['quoteCantidad','quotePrecio','quoteTarifa','quoteKm','quoteCasetas'].forEach(id => $(id).addEventListener('input', calcQuote));
+    }
+
+    function renderSalesChart(rows){
+      const months = CONFIG.months || ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const max = Math.max(1, ...rows.map(r=>Number(r.amount||0)), ...rows.map(r=>Number(r.goal||0)));
+      $('salesChart').innerHTML = rows.map((r,i)=>`<div class="bar ${i===new Date().getMonth()?'active':''}" style="height:${Math.max(4, (Number(r.amount||0)/max)*100)}%" title="${months[i]}: ${money(r.amount)}"><span>${months[i]}</span></div>`).join('');
+    }
+
+    function renderProductsPanel() {
+      if (!$('productList')) return;
+      const details = OPTIONS.productDetails || Object.entries(OPTIONS.productos || {}).map(([nombre, precio]) => ({nombre, precio}));
+      if ($('productAdminCard')) $('productAdminCard').style.display = CURRENT_USER?.role === 'Administrador' ? '' : 'none';
+      $('productList').innerHTML = details.map(p => `
+        <div class="client-item">
+          <div><div class="client-name">${esc(p.nombre)}</div><div class="small">Medidas: ${esc(p.medidas || 'Pendiente')} · Resistencia: ${esc(p.resistencia || 'Pendiente')} · Peso: ${esc(p.peso_aprox || 'Pendiente')}</div><div class="small">Precio base cotizador: ${p.precio == null ? 'Pendiente' : money(p.precio)}</div></div>
+          ${CURRENT_USER?.role === 'Administrador' ? `<button class="btn secondary" onclick="editProduct(${Number(p.id) || 0})">Editar</button>` : '<span class="badge CostaSur">Comercial</span>'}
+        </div>`).join('') || '<div class="hint">No hay productos dados de alta.</div>';
+    }
+
+    function editProduct(id) {
+      const p = (OPTIONS.productDetails || []).find(x => Number(x.id) === Number(id));
+      if (!p) return;
+      $('product_id').value = p.id || '';
+      $('product_nombre').value = p.nombre || '';
+      $('product_medidas').value = p.medidas || '';
+      $('product_resistencia').value = p.resistencia || '';
+      $('product_peso').value = p.peso_aprox || '';
+      $('product_precio').value = p.precio ?? '';
+      $('product_activo').value = String(p.activo ? 1 : 0);
+      $('productAdminCard').scrollIntoView({behavior:'smooth'});
+    }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const data = formData(e.target);
+      data.peso_aprox = data.peso_aprox || $('product_peso').value;
+      await api('/api/product', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+      e.target.reset(); $('product_id').value = '';
+      await loadOptions();
+      renderProductsPanel();
+      alert('Producto guardado');
+    }
+
+    function renderRoutesPanel(clients) {
+      if (!$('routeList')) return;
+      const grouped = {};
+      (clients || []).forEach(c => {
+        const z = c.zona || 'Sin zona';
+        if (!grouped[z]) grouped[z] = [];
+        grouped[z].push(c);
+      });
+      $('routeList').innerHTML = Object.entries(grouped).map(([z, list]) => `
+        <div class="card">
+          <div class="section-title" style="margin:0 0 8px"><h2>${esc(z)}</h2><span class="badge ${zoneClass(z)}">${list.length} visita(s)</span></div>
+          ${list.sort((a,b)=>String(a.municipio||'').localeCompare(String(b.municipio||'')) || String(a.nombre_comercial||'').localeCompare(String(b.nombre_comercial||''))).map(c => `
+            <div class="client-item"><div><div class="client-name">${esc(c.nombre_comercial)}</div><div class="small">${esc(c.municipio || '')} - ${esc(c.localidad || '')} - ${esc(c.etapa || '')}</div></div><button class="btn secondary" onclick="openClient(${c.id})">Ver</button></div>
+          `).join('')}
+        </div>`).join('') || '<div class="hint">No hay rutas para mostrar.</div>';
+    }
+
+    function renderReportList() {
+      if (!$('reportList')) return;
+      const quotes = window.QUOTES || [];
+      const quoteRows = quotes.map(q => `<div class="client-item"><div><div class="client-name">Cotizacion - ${esc(q.cliente || '')}</div><div class="small">${esc(q.folio || '')} · ${esc(q.fecha || '')} · ${esc(q.status || '')} · ${money(q.total)}</div></div>${q.pdf ? `<button class="btn secondary" onclick="window.open('${esc(q.pdf)}','_blank')">PDF</button>` : ''}</div>`).join('');
+      const followRows = (window.LAST_ALERTS || []).map(a => `<div class="client-item alert"><div><div class="client-name">Seguimiento - ${esc(a.nombre_comercial || '')}</div><div class="small">${esc(a.municipio || '')} · ${esc(a.etapa || '')} · ${esc(a.seguimiento || a.ultima_fecha || 'sin fecha')}</div></div><button class="btn secondary" onclick="openClient(${a.id})">Ver</button></div>`).join('');
+      const clientRows = (window.DASHBOARD_CLIENTS || []).map(c => `<div class="client-item"><div><div class="client-name">Alta cliente - ${esc(c.nombre_comercial || '')}</div><div class="small">${esc(c.created_at || '')} · ${esc(c.zona || '')} · ${esc(c.municipio || '')} · ${esc(c.etapa || '')}</div></div><button class="btn secondary" onclick="openClient(${c.id})">Ver</button></div>`).join('');
+      const selected = ACTIVE_REPORT_GROUP === 'quotes' ? quoteRows : ACTIVE_REPORT_GROUP === 'followups' ? followRows : clientRows;
+      $('reportList').innerHTML = selected || '<div class="hint">Sin datos para este reporte.</div>';
+    }
+
+    function showReportGroup(group) {
+      ACTIVE_REPORT_GROUP = group;
+      renderReportList();
+      $('reportList').scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    async function loadDashboard() {
+      const d = await api('/api/dashboard');
+      CONFIG.settings = d.settings || {}; CONFIG.monthlySales = d.monthlySales || []; CONFIG.months = d.months || CONFIG.months;
+      $('mTotal').textContent = d.total;
+      $('mActivos').textContent = d.active;
+      $('mCotizaciones').textContent = d.pendingQuotes;
+      $('mSeguimientos').textContent = d.followUps;
+      $('stageGrid').innerHTML = d.byStage.map(s => `<div class="stage stage-click" onclick="setStageFilter('${esc(s.etapa || '')}')"><b>${s.total}</b><span>${s.etapa || 'Sin etapa'}</span></div>`).join('');
+      renderMap(d.byZoneClients, d.alerts);
+      const visibleClients = filteredDashboardClients(d.byZoneClients || []);
+      const visibleIds = new Set(visibleClients.map(c => String(c.id)));
+      const visibleAlerts = (d.alerts || []).filter(a => visibleIds.has(String(a.id)));
+      const visibleByMunicipio = Object.values(visibleClients.reduce((acc, c) => {
+        const key = `${c.municipio || 'Sin municipio'}|${c.zona || 'Sin zona'}`;
+        if (!acc[key]) acc[key] = { municipio: c.municipio || 'Sin municipio', zona: c.zona || 'Sin zona', total: 0 };
+        acc[key].total += 1;
+        return acc;
+      }, {})).sort((a, b) => b.total - a.total || String(a.municipio).localeCompare(String(b.municipio)));
+      if ($('hFollow')) $('hFollow').textContent = d.followUps;
+      if ($('hQuotes')) $('hQuotes').textContent = d.pendingQuotes;
+      if ($('hVisit')) $('hVisit').textContent = d.followUps;
+      if ($('agendaCount')) $('agendaCount').textContent = d.followUps;
+      const hot = visibleClients.filter(c => c.potencial === 'A' || ['cotizacion enviada','negociacion','cliente activo'].includes(normStage(c.etapa)));
+      if ($('hHot')) $('hHot').textContent = hot.length;
+      if ($('kTotal')) $('kTotal').textContent = d.total;
+      if ($('kQuotes')) $('kQuotes').textContent = d.pendingQuotes;
+      if ($('kConv')) $('kConv').textContent = d.total ? Math.round((d.active / d.total) * 1000) / 10 + '%' : '0%';
+      if ($('kSalesMonth')) $('kSalesMonth').textContent = d.quotesMonth || 0;
+      if ($('kSalesGoal')) $('kSalesGoal').textContent = `Proyeccion: ${money(d.quotesTotalAmount || 0)}`;
+      if ($('kAnnualPct')) $('kAnnualPct').textContent = d.quotesWon || 0;
+      if ($('kAnnualTxt')) $('kAnnualTxt').textContent = `Logradas: ${money(d.quotesWonAmount || 0)}`;
+      renderSalesChart(CONFIG.monthlySales || []);
+      if ($('hotClients')) $('hotClients').innerHTML = hot.slice(0,5).map((c,i)=>`<div class="mini-row"><b>${i+1}</b><div><strong>${esc(c.nombre_comercial)}</strong><div class="small">${esc(c.municipio||'')} · ${esc(c.etapa||'')}</div></div><span class="pill green">${c.potencial||'BDP'}</span></div>`).join('') || '<div class="hint">Sin clientes calientes.</div>';
+      if ($('recentActivities')) $('recentActivities').innerHTML = visibleAlerts.slice(0,5).map(a=>`<div class="mini-row"><b>*</b><div><strong>${esc(a.nombre_comercial)}</strong><div class="small">${esc(a.etapa||'')} - ${esc(a.municipio||'')}</div></div><span class="small">${esc(a.ultima_fecha||'')}</span></div>`).join('') || '<div class="hint">Sin actividad reciente.</div>';
+      window.DASHBOARD_CLIENTS = d.byZoneClients || [];
+      window.LAST_ALERTS = visibleAlerts;
+      if ($('modReportEmbudo')) $('modReportEmbudo').textContent = d.total;
+      if ($('modReportQuotes')) $('modReportQuotes').textContent = (window.QUOTES || []).length || d.quotesMonth || 0;
+      if ($('modReportFollow')) $('modReportFollow').textContent = d.followUps;
+      renderProductsPanel();
+      renderRoutesPanel(visibleClients);
+      if ($('reportList')) renderReportList();
+      $('zoneClientList').innerHTML = renderZoneClients(d.byZoneClients);
+      $('municipioList').innerHTML = visibleByMunicipio.slice(0, 12).map(m => `<div class="client-item"><div><div class="client-name">${m.municipio || 'Sin municipio'}</div><div class="small">${m.total} cliente(s)</div></div><span class="badge ${zoneClass(m.zona)}">${m.zona || ''}</span></div>`).join('') || '<div class="hint">Aun no hay municipios capturados.</div>';
+      $('alertsList').innerHTML = visibleAlerts.map(a => `<div class="client-item alert"><div><div class="client-name">${a.nombre_comercial}</div><div class="small">${a.municipio || ''} - ${a.etapa || ''} - Ultimo contacto: ${a.ultima_fecha || 'sin historial'}</div></div><button class="btn secondary" onclick="openClient(${a.id})">Ver</button></div>`).join('') || '<div class="hint">Sin alertas por ahora.</div>';
+    }
+
+    function setStageFilter(stage){ $('stageFilter').value = stage || ''; loadDashboard(); document.getElementById('clientesPorZonaTitle')?.scrollIntoView({behavior:'smooth'}); }
+    function goSearch(){ showClientsTab(); setTimeout(()=>{$('searchInput')?.focus()},150); }
+    function goAlerts(){ showView('dashboard', document.querySelector('.tabs button')); setTimeout(()=>document.getElementById('alertasDashboard')?.scrollIntoView({behavior:'smooth'}),80); }
+    function goAgenda(){ const btn=[...document.querySelectorAll('.tabs button')].find(b=>b.textContent==='Agenda'); showView('interaction', btn); }
+    function openSettingsSales(){ const btn=[...document.querySelectorAll('.tabs button')].find(b=>b.textContent==='Configuración'); showView('configuracion', btn); setTimeout(()=>$('monthlySalesRows')?.scrollIntoView({behavior:'smooth'}),100); }
+
+    async function logoutCRM() {
+      window.location.href = '/api/logout';
+    }
+
+    document.addEventListener('change' , (e) => {
+      if (e.target && e.target.id === 'stageFilter') loadDashboard();
+    });
+
+    async function loadClients() {
+      const q = encodeURIComponent($('searchInput').value || '');
+      CLIENTS = await api('/api/clients?q=' + q);
+      const zones = ['Costa Sur', 'Costa Centro y Valles del Norte', 'Costa Norte y Frontera', 'Centro y Sierra Centro', 'Sierra y Sur', 'Sin zona'];
+      const grouped = {};
+      CLIENTS.forEach(c => {
+        const z = c.zona || 'Sin zona';
+        if (!grouped[z]) grouped[z] = [];
+        grouped[z].push(c);
+      });
+      $('clientList').innerHTML = zones.filter(z => grouped[z]?.length).map(z => `
+        <div class="card">
+          <div class="section-title" style="margin:0 0 8px"><h2>${esc(z)}</h2><span class="badge ${zoneClass(z)}">${grouped[z].length}</span></div>
+          ${grouped[z].sort((a,b)=>String(a.nombre_comercial||'').localeCompare(String(b.nombre_comercial||''))).map(c => `
+            <div class="client-item">
+              <div>
+                <div class="client-name">${esc(c.nombre_comercial)}</div>
+                <div class="small">${esc(c.contacto || 'Sin contacto')} - ${esc(c.tipo_cliente || 'Sin tipo')} - ${esc(c.municipio || 'Sin municipio')} - ${esc(c.whatsapp || c.telefono || 'Sin telefono')}</div>
+              </div>
+              <div style="display:grid;gap:6px;justify-items:end">
+                <span class="badge ${zoneClass(c.zona)}">${esc(c.etapa || 'Etapa')}</span>
+                <button class="btn secondary" onclick="openClient(${c.id})">Ficha</button>
+              </div>
+            </div>`).join('')}
+        </div>`).join('') || '<div class="hint">No hay resultados.</div>';
+    }
+
+    async function loadClientsForSelect() {
+      CLIENTS = await api('/api/clients');
+      $('interactionClient').innerHTML = '<option value="">Selecciona cliente</option>' + CLIENTS.map(c => `<option value="${c.id}">${c.nombre_comercial} · ${c.municipio || ''}</option>`).join('');
+    }
+
+    async function loadQuoteClients() {
+      CLIENTS = await api('/api/clients');
+      $('quoteClient').innerHTML = '<option value="">Selecciona cliente</option>' + CLIENTS.map(c => `<option value="${c.id}">${c.nombre_comercial} · ${c.municipio || ''}</option>`).join('');
+      $('quoteClientList').innerHTML = CLIENTS.map(c => `<option value="${esc(c.nombre_comercial)} · ${esc(c.municipio || '')}"></option>`).join('');
+      $('quoteClientSearch').oninput = () => {
+        const typed = $('quoteClientSearch').value.trim().toLowerCase();
+        const exact = CLIENTS.find(c => `${c.nombre_comercial} · ${c.municipio || ''}`.toLowerCase() === typed);
+        const starts = CLIENTS.filter(c => String(c.nombre_comercial || '').toLowerCase().startsWith(typed));
+        const selected = exact || (typed.length >= 2 && starts.length === 1 ? starts[0] : null);
+        if (selected) setQuoteClient(selected.id, false);
+        else {
+          $('quoteClient').value = '';
+          $('quoteClientSelected').textContent = starts.length ? `${starts.length} coincidencia(s); selecciona una.` : 'Sin cliente seleccionado';
+        }
+      };
+    }
+
+    function setQuoteClient(id, updateText=true) {
+      const c = CLIENTS.find(x => String(x.id) === String(id));
+      if (!c) return;
+      $('quoteClient').value = String(c.id);
+      if (updateText) $('quoteClientSearch').value = `${c.nombre_comercial} · ${c.municipio || ''}`;
+      $('quoteClientSelected').textContent = `Seleccionado: ${c.nombre_comercial} · ${c.municipio || ''}`;
+      $('quoteMunicipio').value = c.municipio || '';
+      quoteZone();
+    }
+
+    function renderQuoteRows(quotes, targetId='quoteList') {
+      const target = $(targetId);
+      if (!target) return;
+      target.innerHTML = (quotes || []).map(q => `
+        <div class="client-item">
+          <div>
+            <div class="client-name">${esc(q.cliente || 'Cliente')}</div>
+            <div class="small">${esc(q.folio || 'Sin folio')} - ${esc(q.fecha || '')} - ${esc(q.producto || '')} - Total IVA incluido ${money(q.total_con_iva || q.total)} - ${esc(q.municipio || '')}</div>
+            <div class="small">Situacion: <strong>${esc(q.status || 'Elaborada')}</strong> · Elaboro: ${esc(q.created_by_name || q.created_by || '-')}</div>
+          </div>
+          <div style="display:grid;gap:6px;justify-items:end">
+            <select onchange="updateQuoteStatus(${q.id}, this.value)">
+              ${['Elaborada','Presentada al cliente','Cambios solicitados','En seguimiento','Aceptada / lista para pedido','Lograda','No aceptada','Cancelada'].map(v => `<option ${v === q.status ? 'selected' : ''}>${v}</option>`).join('')}
+            </select>
+            <button class="btn secondary" onclick="reuseQuote(${q.id})">Corregir / nueva version</button>
+            ${q.pdf ? `<button class="btn secondary" onclick="window.open('${esc(q.pdf)}','_blank')">Ver PDF</button>` : ''}
+          </div>
+        </div>`).join('') || '<div class="hint">Aun no hay cotizaciones registradas.</div>';
+    }
+
+    async function loadQuotes() {
+      const quotes = await api('/api/quotes');
+      window.QUOTES = quotes;
+      renderQuoteRows(quotes, 'quoteList');
+      showOrderGroup(ACTIVE_ORDER_GROUP, false);
+      if ($('modPedidosAbiertos')) $('modPedidosAbiertos').textContent = quotes.filter(q => !['Lograda','No aceptada','Cancelada'].includes(q.status)).length;
+      if ($('modPedidosLogrados')) $('modPedidosLogrados').textContent = quotes.filter(q => q.status === 'Lograda').length;
+      if ($('modPedidosNoAceptadas')) $('modPedidosNoAceptadas').textContent = quotes.filter(q => ['No aceptada','Cancelada'].includes(q.status)).length;
+      if ($('reportList')) renderReportList();
+    }
+
+    function showOrderGroup(group, scroll=true) {
+      ACTIVE_ORDER_GROUP = group;
+      const quotes = window.QUOTES || [];
+      const filtered = group === 'won'
+        ? quotes.filter(q => q.status === 'Lograda')
+        : group === 'lost'
+          ? quotes.filter(q => ['No aceptada','Cancelada'].includes(q.status))
+          : quotes.filter(q => !['Lograda','No aceptada','Cancelada'].includes(q.status));
+      renderQuoteRows(filtered, 'ordersQuoteList');
+      if (scroll) $('ordersQuoteList')?.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    async function reuseQuote(id) {
+      const q = (window.QUOTES || []).find(x => Number(x.id) === Number(id));
+      if (!q) return alert('No encontre la cotizacion.');
+      const btn = [...document.querySelectorAll('.tabs button')].find(b => b.textContent === 'Cotizaciones');
+      showView('quote', btn);
+      await loadQuoteClients();
+      setQuoteClient(q.client_id || '');
+      $('quoteProducto').value = q.producto || '';
+      $('quoteCantidad').value = q.cantidad || '';
+      $('quotePrecio').value = q.precio_unitario || '';
+      $('quoteMunicipio').value = q.municipio || '';
+      $('quoteZona').value = q.zona || '';
+      $('quoteKm').value = q.km_flete || '';
+      $('quoteTarifa').value = q.tarifa_km || '';
+      $('quoteCasetas').value = q.casetas || 0;
+      if ($('quoteFactura')) $('quoteFactura').value = String(q.requiere_factura || '0');
+      const note = $('quoteNote');
+      if (note) note.value = `Nueva version basada en ${q.folio || 'cotizacion anterior'}.`;
+      calcQuote();
+      $('quotePreview')?.classList.add('hidden');
+      alert('Cargue la cotizacion al formulario. Ajusta cantidad, kilometros, tarifa o casetas y genera un nuevo PDF con folio.');
+    }
+
+    async function updateQuoteStatus(id, status) {
+      await api('/api/quote_status', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id, status})});
+      await loadQuotes();
+      await loadDashboard();
+    }
+
+    function quoteProduct() {
+      const price = OPTIONS.productos[$('quoteProducto').value];
+      if (price !== null && price !== undefined) $('quotePrecio').value = price;
+      calcQuote();
+    }
+
+    function quoteZone() {
+      const zone = OPTIONS.municipios[$('quoteMunicipio').value]?.zona || '';
+      $('quoteZona').value = zone;
+      $('quoteTarifa').value = OPTIONS.tarifas[zone] || 0;
+      calcQuote();
+    }
+
+    function calcQuote() {
+      const precio = Number($('quotePrecio').value || 0);
+      const cantidad = Number($('quoteCantidad').value || 0);
+      const km = Number($('quoteKm').value || 0);
+      const tarifa = Number($('quoteTarifa').value || 0);
+      const casetas = Number($('quoteCasetas').value || 0);
+      const requiereFactura = $('quoteFactura')?.value === '1';
+      const fleteBase = km * tarifa;
+      const flete = fleteBase + casetas;
+      const fletePieza = cantidad > 0 ? flete / cantidad : 0;
+      const costo = precio + fletePieza;
+      const total = (precio * cantidad) + flete;
+      const subtotal = requiereFactura ? total / 1.16 : total;
+      const iva = requiereFactura ? total - subtotal : 0;
+      const totalConIva = total;
+      $('quoteResult').innerHTML = `
+        <div><label>Flete base</label><div class="quote-total">${money(fleteBase)}</div></div>
+        <div><label>Casetas</label><div class="quote-total">${money(casetas)}</div></div>
+        <div><label>Flete total</label><div class="quote-total">${money(flete)}</div></div>
+        <div><label>Flete por pieza</label><div class="quote-total">${money(fletePieza)}</div></div>
+        <div><label>Costo individual</label><div class="quote-total">${money(costo)}</div></div>
+        <div><label>Total final IVA incluido</label><div class="quote-total">${money(totalConIva)}</div></div>
+        ${requiereFactura ? `<div><label>Subtotal antes de IVA</label><div class="quote-total">${money(subtotal)}</div></div><div><label>IVA incluido 16%</label><div class="quote-total">${money(iva)}</div></div>` : ''}`;
+      return { precio, cantidad, km, tarifa, casetas, fleteBase, flete, fletePieza, costo, total, subtotal, requiereFactura, iva, totalConIva };
+    }
+
+    function buildQuotePayload(form) {
+      const data = formData(form);
+      const q = calcQuote();
+      data.fecha = new Date().toISOString().slice(0,10);
+      data.hora = new Date().toTimeString().slice(0,5);
+      data.tipo_contacto = 'Cotizacion';
+      data.productos_ofrecidos = data.producto;
+      data.precio_ofrecido = q.costo.toFixed(2);
+      data.subtotal = q.subtotal.toFixed(2);
+      data.iva = q.iva.toFixed(2);
+      data.total_con_iva = q.totalConIva.toFixed(2);
+      data.requiere_factura = q.requiereFactura ? '1' : '0';
+      data.resultado = 'Cotizacion enviada';
+      data.etapa = 'Cotizacion enviada';
+      data.proxima_accion = 'Dar seguimiento a cotizacion por WhatsApp';
+      data.comentarios = `Cotizacion ${data.producto}. Precio planta con IVA incluido: ${money(q.precio)}. Cantidad: ${q.cantidad}. Flete base: ${money(q.fleteBase)} (${q.km} km x ${money(q.tarifa)}). Casetas: ${money(q.casetas)}. Flete total: ${money(q.flete)}. Flete por pieza: ${money(q.fletePieza)}. Costo individual: ${money(q.costo)}. Total final con IVA incluido: ${money(q.totalConIva)}. ${q.requiereFactura ? `Subtotal: ${money(q.subtotal)}. IVA incluido 16%: ${money(q.iva)}.` : 'Sin desglose fiscal solicitado.'} ${data.nota_flete || ''} ${data.comentarios || ''}`;
+      data.__calc = q;
+      return data;
+    }
+
+    function showQuotePreview(data) {
+      const client = CLIENTS.find(c => String(c.id) === String(data.client_id));
+      $('quotePreview').classList.remove('hidden');
+      $('quotePreview').innerHTML = `
+        <div class="section-title" style="margin-top:0"><h2>Previsualizacion</h2><span class="badge CostaSur">Antes de PDF</span></div>
+        <div class="grid cards">
+          <div><label>Cliente</label><strong>${esc(client?.nombre_comercial || '-')}</strong></div>
+          <div><label>RFC</label><strong>${esc(client?.rfc || '-')}</strong></div>
+          <div><label>Producto</label><strong>${esc(data.producto || '-')}</strong></div>
+          <div><label>Cantidad</label><strong>${esc(data.cantidad || '0')}</strong></div>
+          <div><label>Costo individual</label><strong>${money(data.__calc.costo)}</strong></div>
+          <div><label>Casetas</label><strong>${money(data.__calc.casetas)}</strong></div>
+          <div><label>Requiere factura</label><strong>${data.__calc.requiereFactura ? 'Sí' : 'No'}</strong></div>
+          <div><label>Total final IVA incluido</label><strong>${money(data.__calc.totalConIva)}</strong></div>
+          ${data.__calc.requiereFactura ? `<div><label>Subtotal antes de IVA</label><strong>${money(data.__calc.subtotal)}</strong></div><div><label>IVA incluido 16%</label><strong>${money(data.__calc.iva)}</strong></div>` : ''}
+        </div>
+        <div class="hint" style="margin-top:10px">En caso de requerir factura favor de confirmar sus datos fiscales.</div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" onclick="submitQuoteFinal()">Generar PDF con folio</button>
+          <button class="btn secondary" onclick="$('quotePreview').classList.add('hidden')">Regresar y modificar</button>
+        </div>`;
+      $('quotePreview').scrollIntoView({behavior:'smooth', block:'center'});
+    }
+
+    async function submitQuoteFinal() {
+      if (!window.PENDING_QUOTE_DATA) return;
+      const data = {...window.PENDING_QUOTE_DATA};
+      delete data.__calc;
+      const result = await api('/api/quote', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+      if (result.pdf) window.open(result.pdf, '_blank');
+      window.PENDING_QUOTE_DATA = null;
+      $('quotePreview').classList.add('hidden');
+      const emailMsg = result.email?.sent ? 'Correo enviado al cliente/administrador.' : (data.enviar_correo === '1' ? `No se envio correo: ${result.email?.error || 'revisa configuracion SMTP'}.` : 'No se envio correo por eleccion.');
+      alert(`Cotizacion guardada con folio ${result.folio || 'sin folio'}. Se abrio el PDF. ${emailMsg}`);
+      await loadQuotes();
+      await loadDashboard();
+    }
+
+    async function quoteForClient(id) {
+      const btn = [...document.querySelectorAll('.tabs button')].find(b => b.textContent === 'Cotizaciones');
+      showView('quote', btn);
+      await loadQuoteClients();
+      setQuoteClient(id);
+      const c = CLIENTS.find(x => x.id === id);
+      if (c) {
+        $('quoteMunicipio').value = c.municipio || '';
+        quoteZone();
+      }
+    }
+
+    async function openClient(id) {
+      const d = await api('/api/client?id=' + id);
+      const c = d.client;
+      CURRENT_CLIENT = c; window.CURRENT_HISTORY = d.history || [];
+      $('clientModalTitle').textContent = c.nombre_comercial || 'Cliente';
+      $('clientModalSub').textContent = `${c.tipo_cliente || 'Sin tipo'} · ${c.municipio || ''} · ${c.zona || ''} · ${c.etapa || ''}`;
+      $('clientModalBody').innerHTML = renderClientDetailHTML(d);
+      $('clientModal').classList.add('active');
+    }
+
+    function closeClientModal(){ $('clientModal').classList.remove('active'); $('clientModalBody').innerHTML=''; }
+
+    function renderClientDetailHTML(d){
+      const c = d.client;
+      return `
+        <div class="section-title"><h2>${esc(c.nombre_comercial)}</h2><span class="badge ${zoneClass(c.zona)}">${esc(c.zona || '')}</span></div>
+        <div class="grid cards">
+          <div class="card"><div class="label">Contacto</div><strong>${esc(c.contacto || '-')}</strong></div>
+          <div class="card"><div class="label">WhatsApp</div><strong>${esc(c.whatsapp || c.telefono || '-')}</strong></div>
+          <div class="card"><div class="label">Municipio</div><strong>${esc(c.municipio || '-')}</strong></div>
+          <div class="card"><div class="label">Etapa</div><strong>${esc(c.etapa || '-')}</strong></div>
+          <div class="card"><div class="label">Capturado por</div><strong>${esc(c.created_by_name || c.created_by || '-')}</strong></div>
+        </div>
+        <div class="section-title"><h2>Datos fiscales</h2></div>
+        <div class="grid cards">
+          <div class="card"><div class="label">Razón social</div><strong>${esc(c.razon_social || '-')}</strong></div>
+          <div class="card"><div class="label">Tipo persona</div><strong>${esc(c.tipo_persona_fiscal || '-')}</strong></div>
+          <div class="card"><div class="label">RFC</div><strong>${esc(c.rfc || '-')}</strong></div>
+          <div class="card"><div class="label">Régimen fiscal</div><strong>${esc(c.regimen_fiscal || '-')}</strong></div>
+          <div class="card"><div class="label">Uso CFDI</div><strong>${esc(c.uso_cfdi || '-')}</strong></div>
+          <div class="card"><div class="label">CP fiscal</div><strong>${esc(c.cp_fiscal || '-')}</strong></div>
+          <div class="card"><div class="label">Correo facturación</div><strong>${esc(c.correo_facturacion || '-')}</strong></div>
+          <div class="card"><div class="label">Método / forma pago</div><strong>${esc(c.metodo_pago || '-')} · ${esc(c.forma_pago || '-')}</strong></div>
+        </div>
+        <div class="hint" style="margin-top:10px">En caso de requerir factura favor de confirmar sus datos fiscales.</div>
+        <div class="grid row" style="margin-top:14px">
+          <button class="btn" onclick="quoteForClient(${c.id});closeClientModal()">Cotizar</button>
+          <button class="btn secondary" onclick="renderEditClient()">Editar ficha</button>
+        </div>
+        <div class="section-title"><h2>Historial</h2></div>
+        <div class="timeline">
+          ${d.history.map(h => `<div class="event"><strong>${h.fecha || ''} ${h.hora || ''} · ${h.tipo_contacto || ''}</strong><div>${esc(h.comentarios || '')}</div><div class="small">Producto: ${h.productos_ofrecidos || '-'} · Precio: ${money(h.precio_ofrecido) || '-'} · Resultado: ${h.resultado || '-'}</div><div class="small">Próxima acción: ${h.proxima_accion || '-'} · Seguimiento: ${h.fecha_seguimiento || '-'}</div><div class="small">Registró: ${esc(h.created_by_name || h.created_by || '-')}</div><div class="event-actions"><button class="btn secondary" onclick="editInteractionById(${h.id})">Editar</button><button class="btn secondary" onclick="deleteInteraction(${h.id}, ${c.id})">Borrar</button></div></div>`).join('') || '<div class="hint">Sin historial.</div>'}
+        </div>`;
+    }
+
+    function editInteractionById(id) {
+      const h = (window.CURRENT_HISTORY || []).find(item => Number(item.id) === Number(id));
+      if (h) editInteraction(h);
+    }
+
+    function editInteraction(h) {
+      const productOptions = Object.keys(OPTIONS.productos || {}).map(p => `<option ${p === h.productos_ofrecidos ? 'selected' : ''}>${esc(p)}</option>`).join('');
+      $('clientModalBody').insertAdjacentHTML('afterbegin', `
+        <div class="card" id="editInteractionBox" style="margin-bottom:12px">
+          <div class="section-title" style="margin-top:0"><h2>Editar historial</h2><button class="btn secondary" onclick="$('editInteractionBox').remove()">Cerrar</button></div>
+          <form id="editInteractionForm" class="grid">
+            <input type="hidden" name="id" value="${h.id}">
+            <div class="row">
+              <div><label>Fecha</label><input name="fecha" type="date" value="${esc(h.fecha || '')}"></div>
+              <div><label>Hora</label><input name="hora" type="time" value="${esc(h.hora || '')}"></div>
+            </div>
+            <div class="row">
+              <div><label>Tipo contacto</label><select name="tipo_contacto">${['WhatsApp','Llamada','Visita','Correo','Cotización'].map(v => `<option ${v === h.tipo_contacto ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+              <div><label>Resultado</label><select name="resultado">
+                ${['Pendiente','Procesada','Cancelada','No aceptada','Cotización enviada','Negociación','Cliente activo','Cliente perdido'].map(v => `<option ${v === h.resultado ? 'selected' : ''}>${v}</option>`).join('')}
+              </select></div>
+            </div>
+            <div class="row">
+              <div><label>Producto</label><select name="productos_ofrecidos"><option value="">Sin producto</option>${productOptions}</select></div>
+              <div><label>Precio ofrecido</label><input name="precio_ofrecido" type="number" step="0.01" value="${h.precio_ofrecido ?? ''}"></div>
+            </div>
+            <div><label>Comentarios</label><textarea name="comentarios">${esc(h.comentarios || '')}</textarea></div>
+            <div class="row">
+              <div><label>Próxima acción</label><input name="proxima_accion" value="${esc(h.proxima_accion || '')}"></div>
+              <div><label>Fecha seguimiento</label><input name="fecha_seguimiento" type="date" value="${esc(h.fecha_seguimiento || '')}"></div>
+            </div>
+            <div class="row">
+              <div><label>Mover etapa del cliente</label><select name="etapa">
+                <option value="">Sin cambio</option>
+                ${['Prospecto nuevo','Contactado','Cotización enviada','Negociación','Cliente activo','Cliente perdido'].map(v => `<option>${v}</option>`).join('')}
+              </select></div>
+              <button class="btn full">Guardar historial</button>
+            </div>
+          </form>
+        </div>
+      `);
+      $('editInteractionForm').addEventListener('submit', saveInteractionEdit);
+      $('editInteractionBox').scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    async function saveInteractionEdit(e) {
+      e.preventDefault();
+      const data = formData(e.target);
+      const result = await api('/api/interaction', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+      alert('Historial actualizado');
+      await openClient(result.client_id || CURRENT_CLIENT.id);
+      await loadDashboard();
+    }
+
+    async function deleteInteraction(id, clientId) {
+      if (!confirm('¿Seguro que deseas borrar este registro del historial?')) return;
+      await api('/api/interaction?id=' + id, { method:'DELETE' });
+      alert('Registro de historial borrado');
+      await openClient(clientId);
+      await loadDashboard();
+    }
+
+    async function renderEditClient() {
+      const c = CURRENT_CLIENT;
+      if (!c) return;
+      if (CURRENT_USER?.role === 'Administrador' && !USERS.length) USERS = await api('/api/users');
+      const municipios = Object.keys(OPTIONS.municipios).map(m => `<option ${m === c.municipio ? 'selected' : ''}>${esc(m)}</option>`).join('');
+      const sellerField = CURRENT_USER?.role === 'Administrador' ? `<div><label>Vendedor responsable</label><select name="assigned_to"><option value="">Administrador / sin asignar</option>${USERS.filter(u=>u.active).map(u=>`<option value="${esc(u.username)}" ${u.username===c.assigned_to?'selected':''}>${esc(u.full_name || u.username)}</option>`).join('')}</select></div>` : '';
+      $('clientModalBody').innerHTML = `
+        <div class="section-title"><h2>Editar cliente</h2><span class="badge ${zoneClass(c.zona)}">${esc(c.zona || '')}</span></div>
+        <form id="editClientForm" class="grid">
+          <input type="hidden" name="id" value="${c.id}">
+          <div><label>Nombre comercial</label><input name="nombre_comercial" required value="${esc(c.nombre_comercial)}"></div>
+          <div><label>Razón social</label><input name="razon_social" value="${esc(c.razon_social)}"></div>
+          ${sellerField}
+          <div class="row">
+            <div><label>RFC</label><input name="rfc" style="text-transform:uppercase" value="${esc(c.rfc || '')}"></div>
+            <div><label>Tipo persona fiscal</label><select name="tipo_persona_fiscal" id="editTipoPersona">${['Moral','Fisica'].map(v => opt(v, c.tipo_persona_fiscal || 'Moral')).join('')}</select></div>
+          </div>
+          <div class="row">
+            <div><label>Régimen fiscal</label><input name="regimen_fiscal" id="editRegimen" list="editRegimenList" value="${esc(c.regimen_fiscal || '')}" placeholder="Selecciona o escribe"><datalist id="editRegimenList"></datalist></div>
+            <div><label>Uso CFDI</label><input name="uso_cfdi" id="editUsoCfdi" list="editUsoCfdiList" value="${esc(c.uso_cfdi || '')}" placeholder="Selecciona o escribe"><datalist id="editUsoCfdiList"></datalist></div>
+          </div>
+          <div class="row">
+            <div><label>Método de pago</label><input name="metodo_pago" id="editMetodoPago" list="editMetodoPagoList" value="${esc(c.metodo_pago || '')}" placeholder="Selecciona o escribe"><datalist id="editMetodoPagoList"></datalist></div>
+            <div><label>Forma de pago</label><input name="forma_pago" id="editFormaPago" list="editFormaPagoList" value="${esc(c.forma_pago || '')}" placeholder="Selecciona o escribe"><datalist id="editFormaPagoList"></datalist></div>
+          </div>
+          <div class="row">
+            <div><label>Código postal fiscal</label><input name="cp_fiscal" inputmode="numeric" value="${esc(c.cp_fiscal || '')}"></div>
+            <div><label>Domicilio fiscal</label><input name="domicilio_fiscal" value="${esc(c.domicilio_fiscal || '')}"></div>
+          </div>
+          <div class="row">
+            <div><label>Correo facturación</label><input name="correo_facturacion" type="email" value="${esc(c.correo_facturacion || '')}"></div>
+          </div>
+          <div class="row">
+            <div><label>Contacto</label><input name="contacto" value="${esc(c.contacto)}"></div>
+            <div><label>WhatsApp</label><input name="whatsapp" value="${esc(c.whatsapp || c.telefono)}"></div>
+          </div>
+          <div class="row">
+            <div><label>Municipio</label><select name="municipio" id="editMunicipio">${municipios}</select></div>
+            <div><label>Zona automática</label><input name="zona" id="editZona" readonly value="${esc(c.zona)}"></div>
+          </div>
+          <div><label>Localidad</label><input name="localidad" value="${esc(c.localidad)}"></div>
+          <div><label>Dirección</label><input name="direccion" value="${esc(c.direccion)}"></div>
+          <div class="row">
+            <div><label>Tipo cliente</label><select name="tipo_cliente">
+              ${['Ferretería','Constructora','Distribuidor','Particular','Materialista','Fabricante local'].map(v => opt(v, c.tipo_cliente)).join('')}
+            </select></div>
+            <div><label>Potencial</label><select name="potencial">
+              ${['A','B','C'].map(v => opt(v, c.potencial)).join('')}
+            </select></div>
+          </div>
+          <div class="row">
+            <div><label>Etapa</label><select name="etapa">
+              ${['Prospecto nuevo','Contactado','Cotización enviada','Negociación','Cliente activo','Cliente perdido'].map(v => opt(v, c.etapa)).join('')}
+            </select></div>
+            <div><label>Info enviada</label><select name="info_enviada">
+              ${['','Catálogo enviado','Precios enviados','Catálogo y precios enviados'].map(v => `<option value="${v}" ${v===c.info_enviada?'selected':''}>${v || 'Pendiente'}</option>`).join('')}
+            </select></div>
+          </div>
+          <div><label>Productos de interés</label><input name="productos_interes" value="${esc(c.productos_interes)}"></div>
+          <div><label>Observaciones</label><textarea name="observaciones">${esc(c.observaciones)}</textarea></div>
+          <div class="row">
+            <button class="btn full">Guardar cambios</button>
+            <button class="btn secondary" type="button" onclick="openClient(${c.id})">Cancelar</button>
+          </div>
+        </form>`;
+      $('editMunicipio').addEventListener('change', () => {
+        $('editZona').value = OPTIONS.municipios[$('editMunicipio').value]?.zona || '';
+      });
+      fillSatCatalogs('edit', c.regimen_fiscal || '', c.uso_cfdi || '', c.metodo_pago || '', c.forma_pago || '');
+      $('editTipoPersona')?.addEventListener('change', () => fillSatCatalogs('edit'));
+      $('editClientForm').addEventListener('submit', saveClientEdit);
+    }
+
+    async function saveClientEdit(e) {
+      e.preventDefault();
+      const data = formData(e.target);
+      const result = await api('/api/client', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+      const check = await api('/api/client?id=' + (result.id || data.id));
+      if (data.tipo_cliente && check.client.tipo_cliente !== data.tipo_cliente) {
+        alert('Atención: el tipo de cliente no quedó guardado. Revisa la ficha.');
+        return;
+      }
+      CURRENT_CLIENT = check.client;
+      await loadClients();
+      await loadDashboard();
+      closeClientModal();
+      alert('Cliente actualizado y guardado correctamente');
+    }
+
+    async function deleteClient(id) {
+      const c = CURRENT_CLIENT;
+      const name = c?.nombre_comercial || 'este cliente';
+      if (!confirm(`¿Seguro que deseas borrar ${name}? También se borrará su historial.`)) return;
+      await api('/api/client?id=' + id, { method:'DELETE' });
+      closeClientModal();
+      CURRENT_CLIENT = null;
+      await loadClients();
+      await loadDashboard();
+      alert('Cliente borrado');
+    }
+
+
+    async function loadUsers() {
+      const card = $('usersAdminCard');
+      if (!card) return;
+      if (CURRENT_USER?.role !== 'Administrador') {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = '';
+      USERS = await api('/api/users');
+      $('usersList').innerHTML = USERS.map(u => `
+        <div class="client-item">
+          <div>
+            <div class="client-name">${esc(u.full_name || u.username)}</div>
+            <div class="small">Usuario: ${esc(u.username)} · ${esc(u.role)} · ${u.active ? 'Activo' : 'Inactivo'}</div>
+          </div>
+          <div style="display:grid;gap:6px;justify-items:end">
+            <button class="btn secondary" onclick="editUser(${u.id})">Editar</button>
+            ${u.username !== CURRENT_USER.username ? `<button class="btn secondary" onclick="deactivateUser(${u.id})">Desactivar</button>` : ''}
+          </div>
+        </div>
+      `).join('') || '<div class="hint">Aún no hay usuarios adicionales.</div>';
+    }
+
+    function resetUserForm() {
+      $('userForm')?.reset();
+      if ($('user_id')) $('user_id').value = '';
+      if ($('user_active')) $('user_active').value = '1';
+    }
+
+    function editUser(id) {
+      const u = USERS.find(item => Number(item.id) === Number(id));
+      if (!u) return;
+      $('user_id').value = u.id;
+      $('user_username').value = u.username || '';
+      $('user_full_name').value = u.full_name || '';
+      $('user_role').value = u.role || 'Vendedor';
+      $('user_active').value = String(u.active ? 1 : 0);
+      $('user_password').value = '';
+      $('user_username').scrollIntoView({behavior:'smooth', block:'center'});
+    }
+
+    async function deactivateUser(id) {
+      if (!confirm('¿Desactivar este usuario? Ya no podrá entrar al CRM.')) return;
+      await api('/api/user?id=' + id, { method:'DELETE' });
+      await loadUsers();
+    }
+
+    async function saveUser(e) {
+      e.preventDefault();
+      const data = formData(e.target);
+      await api('/api/user', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+      alert('Usuario guardado');
+      resetUserForm();
+      await loadUsers();
+    }
+
+    async function loadSettingsPage(){
+      const cfg = await api('/api/settings');
+      CONFIG = cfg;
+      const st = cfg.settings || {};
+      ['user_name','user_role','company_name','profile_photo','annual_goal','monthly_goal_default','quote_admin_email','smtp_host','smtp_port','smtp_user','smtp_password','smtp_from_email','smtp_from_name','material_cemento_ton','material_jal_m3','mo_block_10_14_28','mo_block_14_20_40'].forEach(k=>{ const el=$('set_'+k); if(el) el.value = st[k] || ''; });
+      const months = cfg.months || ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      $('monthlySalesRows').innerHTML = (cfg.monthlySales||[]).map((r,i)=>`<tr><td><strong>${months[i]}</strong></td><td><input class="sale-amount" data-month="${r.month}" type="number" step="0.01" value="${r.amount||0}"></td><td><input class="sale-goal" data-month="${r.month}" type="number" step="0.01" value="${r.goal||0}"></td></tr>`).join('');
+      $('productPriceRows').innerHTML = Object.entries(cfg.productos||{}).map(([k,v])=>`<div><label>${esc(k)}</label><input class="product-price" data-product="${esc(k)}" type="number" step="0.01" value="${v ?? ''}"></div>`).join('');
+      $('freightRows').innerHTML = Object.entries(cfg.tarifas||{}).map(([k,v])=>`<div><label>${esc(k)}</label><input class="freight-rate" data-zone="${esc(k)}" type="number" step="0.01" value="${v ?? ''}"></div>`).join('');
+    }
+
+    async function saveSettingsAll(){
+      const settings = {};
+      ['user_name','user_role','company_name','profile_photo','annual_goal','monthly_goal_default','quote_admin_email','smtp_host','smtp_port','smtp_user','smtp_password','smtp_from_email','smtp_from_name','material_cemento_ton','material_jal_m3','mo_block_10_14_28','mo_block_14_20_40'].forEach(k=>{ const el=$('set_'+k); if(el) settings[k]=el.value; });
+      const productos = {}; document.querySelectorAll('.product-price').forEach(el=>productos[el.dataset.product]=el.value);
+      const tarifas = {}; document.querySelectorAll('.freight-rate').forEach(el=>tarifas[el.dataset.zone]=el.value);
+      await api('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({settings, productos, tarifas})});
+      const monthlySales = []; document.querySelectorAll('.sale-amount').forEach(el=>{ const month=Number(el.dataset.month); const goalEl=document.querySelector(`.sale-goal[data-month="${month}"]`); monthlySales.push({month, amount:el.value, goal:goalEl?.value||0}); });
+      await api('/api/monthly_sales', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({year:new Date().getFullYear(), monthlySales})});
+      alert('Configuración actualizada');
+      await loadOptions(); await loadDashboard(); await loadSettingsPage();
+    }
+
+    $('quickForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = formData(e.target);
+      data.fecha = new Date().toISOString().slice(0,10);
+      data.hora = new Date().toTimeString().slice(0,5);
+      if (data.info_enviada && !data.fecha_info_enviada) data.fecha_info_enviada = data.fecha;
+      data.resultado = data.etapa;
+      data.proxima_accion = data.comentarios;
+      await api('/api/quick', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+      e.target.reset();
+      $('quickZona').value = '';
+      alert('Captura guardada');
+      loadDashboard();
+    });
+
+    $('interactionForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await api('/api/interaction', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData(e.target)) });
+      e.target.reset();
+      $('interactionForm').fecha.value = new Date().toISOString().slice(0,10);
+      alert('Interacción guardada');
+      loadDashboard();
+    });
+
+    $('quoteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!$('quoteClient').value) return alert('Escribe y selecciona un cliente de la lista.');
+      window.PENDING_QUOTE_DATA = buildQuotePayload(e.target);
+      showQuotePreview(window.PENDING_QUOTE_DATA);
+    });
+
+    $('userForm')?.addEventListener('submit', saveUser);
+    $('productForm')?.addEventListener('submit', saveProduct);
+
+    function downloadQuoteReport(format) {
+      const status = encodeURIComponent($('reportQuoteStatus')?.value || '');
+      const month = encodeURIComponent($('reportQuoteMonth')?.value || '');
+      window.open(`/api/quotes_report.${format}?status=${status}&month=${month}`, '_blank');
+    }
+
+    async function importExcel() {
+      const file = $('excelFile').files[0];
+      if (!file) return alert('Selecciona un archivo Excel');
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/import_excel', { method:'POST', body:fd });
+      const data = await res.json();
+      $('toolMsg').textContent = data.error ? data.error : `Registros importados: ${data.imported}`;
+      loadDashboard();
+    }
+
+    async function init() {
+      await loadCurrentUser();
+      await loadOptions();
+      await loadQuotes();
+      await loadDashboard();
+      await loadClientsForSelect();
+      await loadQuoteClients();
+      $('interactionForm').fecha.value = new Date().toISOString().slice(0,10);
+      quoteProduct();
+      quoteZone();
+    }
+    init();
+  </script>
+</body>
+</html>
