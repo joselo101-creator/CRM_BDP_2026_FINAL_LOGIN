@@ -1,0 +1,40 @@
+CRM_BDP_2026 - PAQUETE LISTO PARA RAILWAY
+
+Este paquete esta preparado para usar almacenamiento persistente en Railway.
+
+Datos actuales incluidos:
+- 18 clientes
+- 4 cotizaciones registradas
+- 4 PDFs en cotizaciones elaboradas
+- 4 PDFs en cotizaciones logradas
+
+IMPORTANTE EN RAILWAY:
+Debes crear un Volume y montarlo en:
+/data
+
+Variable requerida:
+DATA_DIR=/data
+
+Comando de inicio:
+python app.py
+
+Archivos necesarios:
+- app.py
+- index.html
+- bdp_crm.sqlite
+- assets
+- cotizaciones_pdf_actuales
+- cotizaciones_logradas
+- backups
+- requirements.txt
+- Procfile
+- railway.toml
+
+Prueba obligatoria despues de subir:
+1. Abrir la liga del CRM.
+2. Capturar un cliente de prueba.
+3. Generar una cotizacion de prueba.
+4. Reiniciar el servicio en Railway.
+5. Confirmar que el cliente y el PDF siguen existiendo.
+
+Si siguen existiendo, el almacenamiento persistente quedo bien.

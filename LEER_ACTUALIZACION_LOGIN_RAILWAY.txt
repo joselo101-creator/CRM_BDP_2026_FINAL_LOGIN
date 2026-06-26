@@ -1,0 +1,42 @@
+ACTUALIZACION CRM BDP 2026 CON CLAVE DE ACCESO
+
+Datos conservados:
+- 18 clientes
+- 4 cotizaciones registradas
+- PDFs actuales
+- PDFs logrados
+
+Seguridad agregada:
+- Pantalla de acceso antes de abrir el CRM
+- Bloqueo de APIs sin sesion
+- Cerrar sesion desde el menu
+
+Variables que debes agregar en Railway:
+
+CRM_USER=admin
+CRM_PASSWORD=BDP2026
+SESSION_SECRET=BDP2026_SECRETO_CAMBIAR
+DATA_DIR=/data
+
+Recomendacion:
+Cambia CRM_PASSWORD por una clave propia antes de compartir el enlace.
+
+Archivos que debes actualizar en GitHub:
+- app.py
+- index.html
+- bdp_crm.sqlite
+- cotizaciones_pdf_actuales
+- cotizaciones_logradas
+- backups
+- LEER_ACTUALIZACION_LOGIN_RAILWAY.txt
+
+Despues de actualizar GitHub:
+1. Railway hara redeploy automatico.
+2. Abre la liga publica.
+3. Debe pedir usuario y contrasena.
+4. Entra con el usuario y contrasena definidos en Railway.
+5. Confirma que aparezcan los 18 clientes y las 4 cotizaciones.
+
+Si no entra:
+- Revisa que CRM_USER y CRM_PASSWORD esten escritos igual en Railway.
+- Revisa que el deploy haya terminado correctamente.

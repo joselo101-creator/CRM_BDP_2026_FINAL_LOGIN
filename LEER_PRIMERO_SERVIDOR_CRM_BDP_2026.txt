@@ -1,0 +1,47 @@
+CRM_BDP_2026 - PAQUETE PARA SERVIDOR
+
+Este ZIP es para alojar el CRM en un servidor y acceder desde cualquier zona con internet.
+
+Contenido incluido:
+- app.py
+- index.html
+- bdp_crm.sqlite
+- assets
+- cotizaciones_pdf_actuales
+- cotizaciones_logradas
+- backups
+- requirements.txt
+- Procfile
+
+No incluye:
+- Accesos directos de Windows
+- Archivos .bat
+- Archivos .ps1
+- Logs
+- Archivos temporales
+
+Datos conservados:
+- 18 clientes
+- 4 cotizaciones registradas
+- PDFs de cotizaciones elaboradas
+- PDFs de cotizaciones logradas
+
+Requisitos del hosting:
+- Hosting con Python
+- Poder instalar requirements.txt
+- Poder ejecutar: python app.py
+- Debe permitir guardar archivos locales, porque la base esta en bdp_crm.sqlite.
+
+Nota importante:
+Si el servidor borra archivos al reiniciar, se puede perder informacion nueva.
+Para uso real en linea conviene contratar hosting con almacenamiento persistente o migrar despues a una base de datos administrada.
+
+Comando local de prueba:
+python app.py
+
+Ruta principal:
+/
+
+Puerto:
+El servidor usara automaticamente la variable PORT del hosting.
+Si se ejecuta en PC, usara el puerto 8765.
