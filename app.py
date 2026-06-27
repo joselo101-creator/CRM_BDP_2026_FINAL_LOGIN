@@ -19,6 +19,8 @@ from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+from crm_extensions import CRMExtensions
+
 try:
     import openpyxl
 except Exception:
@@ -48,6 +50,7 @@ BACKUP_DIR = DATA_DIR / "backups"
 QUOTE_DIR = DATA_DIR / "cotizaciones_pdf_actuales"
 QUOTE_WON_DIR = DATA_DIR / "cotizaciones_logradas"
 SOURCE_XLSX = Path(r"C:\Users\Equipo\Documents\ANALISIS Y REPORTES 2026 BDP\control_visitas_red_distribuidores_nayarit.xlsx")
+EXTENSIONS = CRMExtensions(DB_PATH, DATA_DIR, BACKUP_DIR, QUOTE_DIR, QUOTE_WON_DIR)
 
 
 def bootstrap_persistent_data():
@@ -517,6 +520,7 @@ def init_db():
             """
         )
         ensure_business_tables(db)
+        EXTENSIONS.ensure_schema(db)
         cols = {r["name"] for r in db.execute("PRAGMA table_info(clients)").fetchall()}
         if "localidad" not in cols:
             db.execute("ALTER TABLE clients ADD COLUMN localidad TEXT DEFAULT ''")
@@ -1445,6 +1449,10 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path in ("/", "/index.html"):
             return self._send(200, "text/html; charset=utf-8", (APP_DIR / "index.html").read_bytes())
+        if path == "/administracion":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo el administrador puede abrir esta seccion"}, 403)
+            return self._send(200, "text/html; charset=utf-8", (APP_DIR / "admin_tools.html").read_bytes())
         if path.startswith("/assets/"):
             filename = Path(path).name
             target = APP_DIR / "assets" / filename
@@ -1605,7 +1613,7 @@ class Handler(BaseHTTPRequestHandler):
                 current_sales = next((r for r in sales_rows if int(r["month"]) == month_now), {"amount": 0, "goal": 0})
                 annual_goal = float(cfg["settings"].get("annual_goal") or 0)
                 annual_sales = sum(float(r.get("amount") or 0) for r in sales_rows)
-            return self.json({"total": total, "active": active, "pendingQuotes": pending_quotes, "quotesMonth": quotes_month, "quotesWon": quotes_won, "quotesTotalAmount": quotes_total_amount, "quotesWonAmount": quotes_won_amount, "followUps": follows, "byStage": by_stage, "byMunicipio": by_mun, "byZoneClients": by_zone_clients, "alerts": alerts, "altoPotencial": volume, "settings": cfg["settings"], "monthlySales": sales_rows, "currentSales": current_sales, "annualSales": annual_sales, "annualGoal": annual_goal, "months": MESES_ES})
+            return self.json({"total": total, "active": active, "pendingQuotes": pending_quotes, "quotesMonth": quotes_month, "quotesWon": quotes_won, "quotesTotalAmount": quotes_total_amount, "quotesWonAmount": quotes_won_amount, "followUps": follows, "byStage": by_stage, "byMunicipio": by_mun, "byZoneClients": by_zone_clients, "alerts": alerts, "altoPotencial": volume, "settings": cfg["settings"], "monthlySales": sales_rows, "currentSales": current_sales, "annualSales": annual_sales, "annualGoal": annual_goal, "months": MESES_ES, "whatsappReminders": EXTENSIONS.reminder_summary()})
         if path == "/api/quotes":
             scope, scope_params = quote_owner_sql(self.current_user(), "q")
             with conn() as db:
@@ -1654,6 +1662,49 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(data)
             return
+        if path == "/api/admin/summary":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            return self.json({
+                "summary": EXTENSIONS.reminder_summary(),
+                "backups": EXTENSIONS.list_backups(),
+                "conflicts": EXTENSIONS.list_conflicts(),
+            })
+        if path == "/api/admin/backups":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            return self.json(EXTENSIONS.list_backups())
+        if path == "/api/admin/backup/download":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            target = EXTENSIONS.backup_file(qs.get("name", [""])[0])
+            if not target:
+                return self.json({"error": "Respaldo no encontrado"}, 404)
+            return self._send(200, "application/zip", target.read_bytes(), {"Content-Disposition": f"attachment; filename={target.name}"})
+        if path == "/api/admin/export":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            export_format = (qs.get("format", ["xlsx"])[0] or "xlsx").lower()
+            if export_format == "json":
+                return self._send(200, "application/json; charset=utf-8", EXTENSIONS.export_json(), {"Content-Disposition": "attachment; filename=CRM_BDP_EXPORTACION.json"})
+            if export_format == "csv":
+                return self._send(200, "application/zip", EXTENSIONS.export_csv_zip(), {"Content-Disposition": "attachment; filename=CRM_BDP_CSV.zip"})
+            return self._send(200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", EXTENSIONS.export_excel(), {"Content-Disposition": "attachment; filename=CRM_BDP_EXPORTACION.xlsx"})
+        if path == "/api/admin/reminders":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            filters = {key: qs.get(key, [""])[0] for key in ("status", "date", "seller", "category", "client")}
+            return self.json(EXTENSIONS.list_reminders(filters))
+        if path == "/api/admin/reminders/export.xlsx":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            filters = {key: qs.get(key, [""])[0] for key in ("status", "date", "seller", "category", "client")}
+            return self._send(200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", EXTENSIONS.export_reminders_excel(filters), {"Content-Disposition": "attachment; filename=REPORTE_RECORDATORIOS_WHATSAPP.xlsx"})
+        if path == "/api/admin/sync/export":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            user = public_user(self.current_user()) or {}
+            return self._send(200, "application/json; charset=utf-8", EXTENSIONS.export_sync_bundle(user.get("username", "admin")), {"Content-Disposition": "attachment; filename=CRM_BDP_DATOS_EMERGENCIA.json"})
         return self.json({"error": "Ruta no encontrada"}, 404)
 
     def do_POST(self):
@@ -1690,6 +1741,39 @@ class Handler(BaseHTTPRequestHandler):
             )
         if not self.require_auth(parsed.path):
             return
+        if parsed.path == "/api/admin/backup/create":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            user = public_user(self.current_user()) or {}
+            return self.json({"ok": True, "backup": EXTENSIONS.create_backup("Manual", user.get("username", "admin"))})
+        if parsed.path in ("/api/admin/backup/restore", "/api/admin/reminders/import", "/api/admin/sync/import"):
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            raw_upload = self.rfile.read(length) if length else b""
+            upload, filename = parse_upload_file(raw_upload, ctype)
+            if not upload:
+                return self.json({"error": "No se recibio archivo"}, 400)
+            actor = public_user(self.current_user()) or {}
+            try:
+                if parsed.path == "/api/admin/backup/restore":
+                    return self.json(EXTENSIONS.restore_backup_bytes(upload, actor.get("username", "admin")))
+                if parsed.path == "/api/admin/reminders/import":
+                    imported = EXTENSIONS.import_reminders_excel(upload, actor)
+                    return self.json({"ok": True, "imported": imported, "filename": filename})
+                result = EXTENSIONS.import_sync_bundle(upload, actor.get("username", "admin"))
+                return self.json({"ok": True, "result": result, "filename": filename})
+            except Exception as exc:
+                return self.json({"error": str(exc)}, 400)
+        if parsed.path == "/api/admin/reminder":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            raw_reminder = self.rfile.read(length) if length else b"{}"
+            try:
+                reminder_data = json.loads(raw_reminder.decode("utf-8") or "{}")
+                rid = EXTENSIONS.save_reminder(reminder_data, public_user(self.current_user()) or {})
+                return self.json({"ok": True, "id": rid})
+            except Exception as exc:
+                return self.json({"error": str(exc)}, 400)
         if parsed.path == "/api/user":
             raw = self.rfile.read(length) if length else b"{}"
             try:
@@ -2058,6 +2142,13 @@ class Handler(BaseHTTPRequestHandler):
                 db.execute("UPDATE users SET active=0, updated_at=? WHERE id=?", (now_iso(), uid))
                 db.commit()
             return self.json({"ok": True})
+        if parsed.path == "/api/admin/reminder":
+            if not is_admin(self.current_user()):
+                return self.json({"error": "Solo administrador"}, 403)
+            rid = qs.get("id", [""])[0]
+            if not rid:
+                return self.json({"error": "Falta ID"}, 400)
+            return self.json({"ok": True, "deleted": EXTENSIONS.delete_reminder(rid)})
         if parsed.path == "/api/client":
             cid = qs.get("id", [""])[0]
             if not cid:
@@ -2089,6 +2180,7 @@ def main():
     init_db()
     seed_initial_data()
     auto_backup()
+    EXTENSIONS.start_scheduler()
     host = "0.0.0.0"
     port = int(os.environ.get("PORT", "8765"))
     print(f"CRM Bazar de Prefabricados listo en http://127.0.0.1:{port}")

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Administracion CRM BDP</title>
+  <meta name="theme-color" content="#8f754d">
+  <link rel="icon" href="/cmr_icon_192.png">
+  <style>
+    :root{--brand:#8f754d;--dark:#181610;--bg:#f4f2ed;--card:#fff;--line:#ded8cc;--muted:#6f6c65;--danger:#a52f2f;--ok:#32783a;font-family:Inter,Segoe UI,Arial,sans-serif}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#171717}.top{position:sticky;top:0;z-index:5;background:var(--dark);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}.top h1{font-size:20px;margin:0}.wrap{max-width:1280px;margin:auto;padding:22px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.tabs button,.btn{border:0;background:var(--brand);color:#fff;padding:11px 15px;border-radius:6px;font-weight:800;cursor:pointer;text-decoration:none}.tabs button{background:#fff;color:#222;border:1px solid var(--line)}.tabs button.active{background:var(--brand);color:#fff}.panel{display:none}.panel.active{display:block}.grid{display:grid;gap:14px}.cards{grid-template-columns:repeat(4,1fr)}.two{grid-template-columns:1fr 1fr}.three{grid-template-columns:repeat(3,1fr)}.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px}.metric{font-size:32px;font-weight:900;color:var(--brand)}.muted{color:var(--muted);font-size:13px}.danger{background:var(--danger)}.secondary{background:#fff;color:#222;border:1px solid var(--line)}label{display:block;font-size:12px;font-weight:800;margin:8px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:6px;background:#fff}textarea{min-height:110px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.list{display:grid;gap:9px}.item{background:#fff;border:1px solid var(--line);border-left:5px solid var(--brand);padding:13px;border-radius:6px;display:grid;grid-template-columns:1fr auto;gap:12px}.status{display:inline-block;padding:4px 8px;border-radius:20px;background:#eee;font-size:11px;font-weight:900}.status.Publicado{background:#dff0df;color:var(--ok)}.status.Vencido{background:#f7dede;color:var(--danger)}.calendar-group{margin-top:16px}.calendar-date{font-weight:900;color:var(--brand);margin:18px 0 7px}.notice{padding:12px;border-radius:6px;background:#fff5d8;border:1px solid #ead49b;margin-bottom:14px}.hidden{display:none!important}h2{margin:0 0 12px}.file{padding:10px;background:#f8f7f4;border:1px dashed var(--line)}
+    @media(max-width:800px){.wrap{padding:14px}.cards,.two,.three{grid-template-columns:1fr}.item{grid-template-columns:1fr}.top{display:block}.top .actions{margin-top:12px;display:grid;grid-template-columns:1fr 1fr}.top .btn{padding:9px;text-align:center}.tabs{display:grid;grid-template-columns:1fr 1fr}.tabs button{width:100%;min-height:52px}}
+  </style>
+</head>
+<body>
+  <header class="top"><div><h1>Administracion CRM BDP</h1><div class="muted" style="color:#ddd">Respaldos, emergencia y Recordatorios WhatsApp</div></div><div class="actions"><a class="btn secondary" href="/">Volver al CRM</a><a class="btn secondary" href="/api/logout">Cerrar sesion</a></div></header>
+  <main class="wrap">
+    <div class="tabs">
+      <button class="active" data-panel="resumen">Resumen</button>
+      <button data-panel="recordatorios">Recordatorios WhatsApp</button>
+      <button data-panel="respaldos">Respaldos y restauracion</button>
+      <button data-panel="emergencia">Modo emergencia</button>
+    </div>
+
+    <section id="resumen" class="panel active">
+      <div class="grid cards">
+        <div class="card"><div class="metric" id="sumToday">0</div><b>Recordatorios de hoy</b></div>
+        <div class="card"><div class="metric" id="sumOverdue">0</div><b>Vencidos</b></div>
+        <div class="card"><div class="metric" id="sumUpcoming">0</div><b>Proximos 7 dias</b></div>
+        <div class="card"><div class="metric" id="sumMode">--</div><b>Modo actual</b></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="card"><h2>Ultimo respaldo</h2><div id="lastBackupText" class="muted">Sin respaldo registrado</div><div class="actions"><button class="btn" onclick="createBackup()">Generar respaldo ahora</button></div></div>
+        <div class="card"><h2>Conflictos de sincronizacion</h2><div class="metric" id="conflictCount">0</div><div class="muted">Los conflictos se conservan para revision; nunca se sobrescriben a ciegas.</div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><h2>Publicaciones de hoy y vencidas</h2><div id="todayList" class="list"></div></div>
+    </section>
+
+    <section id="recordatorios" class="panel">
+      <div class="grid two">
+        <form id="reminderForm" class="card">
+          <h2>Nuevo recordatorio</h2><input type="hidden" name="id">
+          <div class="grid two"><div><label>Fecha sugerida</label><input type="date" name="fecha_sugerida" required></div><div><label>Estatus</label><select name="estatus"><option>Pendiente</option><option>Programado</option><option>Publicado</option><option>Vencido</option><option>Descartado</option></select></div></div>
+          <div class="grid two"><div><label>Categoria</label><input name="categoria" placeholder="Producto, consejo, promocion"></div><div><label>Tipo</label><input name="tipo" placeholder="Imagen, video, texto"></div></div>
+          <div class="grid two"><div><label>Cliente o distribuidor</label><select name="client_id" id="remClient"><option value="">General</option></select></div><div><label>Vendedor responsable</label><select name="assigned_to" id="remSeller"><option value="">Sin asignar</option></select></div></div>
+          <label>Objetivo</label><input name="objetivo" placeholder="Informar, cotizar, recordar">
+          <label>Mensaje</label><textarea name="mensaje" required></textarea>
+          <label>Llamado a la accion</label><input name="call_to_action" placeholder="Solicita tu cotizacion por WhatsApp">
+          <label>Imagen o video (ruta o enlace)</label><input name="media_reference" placeholder="https://... o nombre del archivo">
+          <div class="grid two"><div><label>Etiquetas</label><input name="etiquetas"></div><div><label>Fecha real de publicacion</label><input type="datetime-local" name="fecha_publicacion"></div></div>
+          <div class="actions"><button class="btn">Guardar</button><button type="button" class="btn secondary" onclick="resetReminder()">Limpiar</button></div>
+        </form>
+        <div class="card">
+          <h2>Importar 365 mensajes</h2><div class="notice">El Excel debe incluir la columna <b>mensaje</b>. Puede incluir fecha_sugerida, dia, categoria, tipo, objetivo, call_to_action, estatus, canal, marca y etiquetas.</div>
+          <input class="file" id="messagesFile" type="file" accept=".xlsx">
+          <div class="actions"><button class="btn" onclick="importMessages()">Importar Excel</button><a class="btn secondary" href="/api/admin/reminders/export.xlsx">Exportar reporte</a></div>
+          <hr style="border:0;border-top:1px solid var(--line);margin:20px 0">
+          <h2>Filtros</h2><div class="grid two"><div><label>Fecha</label><input id="filterDate" type="date"></div><div><label>Estatus</label><select id="filterStatus"><option value="">Todos</option><option>Pendiente</option><option>Programado</option><option>Publicado</option><option>Vencido</option><option>Descartado</option></select></div></div>
+          <div class="actions"><button class="btn" onclick="loadReminders()">Aplicar filtros</button><button class="btn secondary" onclick="clearFilters()">Quitar filtros</button></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px"><h2>Calendario e historial</h2><div id="reminderList" class="calendar-group"></div></div>
+    </section>
+
+    <section id="respaldos" class="panel">
+      <div class="notice"><b>Solo administrador.</b> Antes de restaurar, el sistema genera automaticamente un respaldo de seguridad de lo que existe.</div>
+      <div class="grid two">
+        <div class="card"><h2>Generar y exportar</h2><div class="actions"><button class="btn" onclick="createBackup()">Respaldo completo ZIP</button><a class="btn secondary" href="/api/admin/export?format=xlsx">Excel</a><a class="btn secondary" href="/api/admin/export?format=csv">CSV</a><a class="btn secondary" href="/api/admin/export?format=json">JSON</a></div><p class="muted">El ZIP incluye base de datos y cotizaciones PDF. Los respaldos automaticos se generan diariamente, cada lunes y el primer dia del mes.</p></div>
+        <div class="card"><h2>Restaurar respaldo</h2><input class="file" id="restoreFile" type="file" accept=".zip"><div class="actions"><button class="btn danger" onclick="restoreBackup()">Validar y restaurar</button></div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><h2>Historial</h2><div id="backupList" class="list"></div></div>
+    </section>
+
+    <section id="emergencia" class="panel">
+      <div class="notice">El modo local es solo para una caida de Internet o Railway. Mientras el sistema central funciona, todos deben trabajar en la direccion oficial en linea.</div>
+      <div class="grid two">
+        <div class="card"><h2>Salir a modo local</h2><ol><li>Descarga un respaldo completo.</li><li>En la PC de emergencia abre la carpeta MODO_EMERGENCIA_LOCAL_WINDOWS.</li><li>Restaura ese ZIP antes de capturar.</li></ol><button class="btn" onclick="createBackup()">Crear respaldo para emergencia</button></div>
+        <div class="card"><h2>Regresar informacion al sistema central</h2><ol><li>En el CRM local exporta Datos de emergencia.</li><li>En esta pantalla importa el archivo JSON.</li><li>Revisa el reporte de conflictos.</li></ol><a class="btn secondary" href="/api/admin/sync/export">Exportar datos de emergencia</a><input class="file" id="syncFile" type="file" accept=".json" style="margin-top:12px"><div class="actions"><button class="btn" onclick="importSync()">Importar al CRM principal</button></div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><h2>Conflictos detectados</h2><div id="conflictList" class="list"></div></div>
+    </section>
+  </main>
+  <script>
+    const $=id=>document.getElementById(id); const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); let REMINDERS=[];
+    async function api(path,opts={}){const r=await fetch(path,opts);if(r.status===401){location='/login';throw Error('Sesion terminada')}const data=await r.json();if(!r.ok)throw Error(data.error||'Error');return data}
+    document.querySelectorAll('.tabs button').forEach(button=>button.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));button.classList.add('active');$(button.dataset.panel).classList.add('active')});
+    function formObject(form){return Object.fromEntries(new FormData(form).entries())}
+    async function loadOptions(){const [clients,users]=await Promise.all([api('/api/clients'),api('/api/users')]);$('remClient').innerHTML='<option value="">General</option>'+clients.map(c=>`<option value="${c.id}">${esc(c.nombre_comercial)} - ${esc(c.municipio||'')}</option>`).join('');$('remSeller').innerHTML='<option value="">Sin asignar</option>'+users.filter(u=>u.active).map(u=>`<option value="${esc(u.username)}">${esc(u.full_name||u.username)}</option>`).join('')}
+    async function loadSummary(){const data=await api('/api/admin/summary');const s=data.summary||{};$('sumToday').textContent=s.today||0;$('sumOverdue').textContent=s.overdue||0;$('sumUpcoming').textContent=s.upcoming||0;$('sumMode').textContent=s.mode==='local'?'LOCAL':'LINEA';$('lastBackupText').textContent=s.last_backup?`${s.last_backup.created_at} - ${s.last_backup.filename}`:'Sin respaldo registrado';$('conflictCount').textContent=(data.conflicts||[]).length;renderBackups(data.backups||[]);renderConflicts(data.conflicts||[])}
+    async function loadReminders(){const qs=new URLSearchParams();if($('filterDate').value)qs.set('date',$('filterDate').value);if($('filterStatus').value)qs.set('status',$('filterStatus').value);const rows=await api('/api/admin/reminders?'+qs);REMINDERS=rows;renderReminders(rows);const today=new Date().toISOString().slice(0,10);$('todayList').innerHTML=rows.filter(r=>r.fecha_sugerida<=today&&!['Publicado','Descartado'].includes(r.estatus)).slice(0,20).map(reminderHtml).join('')||'<div class="muted">Sin pendientes para hoy.</div>'}
+    function reminderHtml(r){return `<div class="item"><div><b>${esc(r.fecha_sugerida)} - ${esc(r.categoria||'General')}</b> <span class="status ${esc(r.estatus)}">${esc(r.estatus)}</span><div>${esc(r.mensaje)}</div><div class="muted">${esc(r.cliente_nombre||'General')} | ${esc(r.vendedor_nombre||r.assigned_to||'Sin asignar')} ${r.media_reference?'| '+esc(r.media_reference):''}</div></div><div class="actions"><button class="btn secondary" onclick="copyReminder(${r.id})">Copiar</button><button class="btn secondary" onclick="editReminderById(${r.id})">Editar</button><button class="btn danger" onclick="deleteReminder(${r.id})">Borrar</button></div></div>`}
+    function renderReminders(rows){let last='';$('reminderList').innerHTML=rows.map(r=>{const heading=r.fecha_sugerida!==last?`<div class="calendar-date">${esc(r.fecha_sugerida||'Sin fecha')}</div>`:'';last=r.fecha_sugerida;return heading+reminderHtml(r)}).join('')||'<div class="muted">No hay recordatorios con estos filtros.</div>'}
+    function renderBackups(rows){$('backupList').innerHTML=rows.map(b=>`<div class="item"><div><b>${esc(b.backup_type)} - ${esc(b.created_at)}</b><div class="muted">${esc(b.filename)} | ${Math.round((b.size_bytes||0)/1024)} KB | ${esc(b.created_by)}</div></div><a class="btn secondary" href="/api/admin/backup/download?name=${encodeURIComponent(b.filename)}">Descargar</a></div>`).join('')||'<div class="muted">Sin respaldos.</div>'}
+    function renderConflicts(rows){$('conflictList').innerHTML=rows.map(c=>`<div class="item"><div><b>${esc(c.table_name)} - ${esc(c.detected_at)}</b><div class="muted">ID ${esc(c.sync_uuid)} | ${esc(c.status)}</div></div></div>`).join('')||'<div class="muted">No hay conflictos.</div>'}
+    async function createBackup(){const data=await api('/api/admin/backup/create',{method:'POST'});alert('Respaldo generado: '+data.backup.filename);await loadSummary()}
+    async function uploadFile(path,input){const file=$(input).files[0];if(!file)throw Error('Selecciona un archivo');const fd=new FormData();fd.append('file',file);const r=await fetch(path,{method:'POST',body:fd});const data=await r.json();if(!r.ok)throw Error(data.error||'Error');return data}
+    async function restoreBackup(){if(!confirm('Se reemplazaran los datos actuales por el respaldo seleccionado. Continuar?'))return;try{const d=await uploadFile('/api/admin/backup/restore','restoreFile');alert('Restauracion terminada. Respaldo previo: '+d.pre_restore_backup);location='/'}catch(e){alert(e.message)}}
+    async function importMessages(){try{const d=await uploadFile('/api/admin/reminders/import','messagesFile');alert(`Mensajes importados: ${d.imported}`);await loadReminders();await loadSummary()}catch(e){alert(e.message)}}
+    async function importSync(){if(!confirm('Importar datos del modo local y revisar conflictos?'))return;try{const d=await uploadFile('/api/admin/sync/import','syncFile');alert(`Insertados ${d.result.inserted}, actualizados ${d.result.updated}, conflictos ${d.result.conflicts}`);await loadSummary()}catch(e){alert(e.message)}}
+    $('reminderForm').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/reminder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(formObject(e.target))});resetReminder();await loadReminders();await loadSummary()}catch(err){alert(err.message)}};
+    function editReminder(r){const f=$('reminderForm');Object.entries(r).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v??''});f.scrollIntoView({behavior:'smooth'})}
+    function editReminderById(id){const row=REMINDERS.find(r=>Number(r.id)===Number(id));if(row)editReminder(row)}
+    function resetReminder(){$('reminderForm').reset();$('reminderForm').elements.id.value='';$('reminderForm').elements.fecha_sugerida.value=new Date().toISOString().slice(0,10)}
+    async function deleteReminder(id){if(!confirm('Borrar este recordatorio?'))return;await api('/api/admin/reminder?id='+id,{method:'DELETE'});await loadReminders();await loadSummary()}
+    async function copyMessage(message){try{await navigator.clipboard.writeText(message);alert('Mensaje copiado')}catch{prompt('Copia el mensaje:',message)}}
+    function copyReminder(id){const row=REMINDERS.find(r=>Number(r.id)===Number(id));if(row)copyMessage(row.mensaje)}
+    function clearFilters(){$('filterDate').value='';$('filterStatus').value='';loadReminders()}
+    async function init(){resetReminder();await loadOptions();await loadSummary();await loadReminders()}init().catch(e=>alert(e.message));
+  </script>
+</body>
+</html>

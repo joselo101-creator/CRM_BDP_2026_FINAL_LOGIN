@@ -1,0 +1,52 @@
+ACTUALIZACION DEL CRM EN GITHUB Y RAILWAY
+
+SUBE SOLAMENTE LOS 11 ARCHIVOS DE ESTA CARPETA.
+
+1. Entra al repositorio:
+   https://github.com/joselo101-creator/CRM_BDP_2026_FINAL_LOGIN
+
+2. Asegurate de estar en la pestana Code y en la rama main.
+
+3. Pulsa Add file y despues Upload files.
+
+4. Arrastra los 11 archivos de esta carpeta al recuadro de GitHub.
+   No arrastres la carpeta completa; selecciona los archivos que estan dentro.
+
+5. GitHub mostrara que algunos archivos seran reemplazados y otros agregados.
+   Es correcto. No borres primero los archivos existentes.
+
+6. En Commit changes escribe:
+   Actualizacion respaldos y Recordatorios WhatsApp
+
+7. Selecciona Commit directly to the main branch.
+
+8. Pulsa Commit changes una sola vez.
+
+9. Abre Railway y espera a que el despliegue indique Success o Active.
+
+10. Confirma que siguen estas variables:
+    DATA_DIR=/data
+    PORT=8080
+
+11. No borres ni desconectes el volumen montado en /data.
+
+12. Abre:
+    https://crmbdp2026finallogin-production.up.railway.app/login
+
+13. Entra como administrador y comprueba:
+    - 19 clientes.
+    - 6 cotizaciones.
+    - Menu Administracion.
+    - Recordatorios WhatsApp.
+    - Respaldos y restauracion.
+
+14. Genera y descarga un respaldo manual inmediatamente.
+
+NUNCA SUBIR A GITHUB PARA ACTUALIZAR:
+- bdp_crm.sqlite
+- backups
+- base_datos_local
+- cotizaciones_pdf_actuales
+- cotizaciones_logradas
+- archivos con contrasenas reales
+

@@ -483,6 +483,15 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
           <button class="btn secondary" onclick="importExcel()">Importar Excel</button>
           <div id="toolMsg" class="hint"></div>
         </div>
+
+        <div id="adminContinuityCard" class="card" style="display:none;margin-bottom:16px">
+          <div class="section-title" style="margin-top:0"><h2>Continuidad y WhatsApp</h2><button class="btn" onclick="window.location.href='/administracion'">Abrir administracion</button></div>
+          <div class="row3">
+            <div><div class="metric" id="waToday">0</div><div class="label">Recordatorios de hoy</div></div>
+            <div><div class="metric" id="waOverdue">0</div><div class="label">Recordatorios vencidos</div></div>
+            <div><div class="client-name" id="lastBackup">Sin respaldo</div><div class="label">Ultimo respaldo</div></div>
+          </div>
+        </div>
         <div class="card import-box" style="margin-top:16px">
           <h2>Reporte de cotizaciones</h2>
           <p class="hint">Filtra por estatus y por mes para generar reporte en Excel o PDF.</p>
@@ -611,6 +620,7 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
     <button onclick="showView('reportes', this)">Reportes</button>
         <button onclick="showView('tools', this)">Documentos</button>
     <button onclick="showView('configuracion', this)">Configuración</button>
+    <button id="adminToolsNav" style="display:none" onclick="window.location.href='/administracion'">Administracion</button>
     <button onclick="logoutCRM()">Cerrar sesión</button>
   </nav>
 
@@ -769,6 +779,8 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       const admin = CURRENT_USER?.role === 'Administrador';
       const configButton = [...document.querySelectorAll('.tabs button')].find(b => b.textContent.trim() === 'Configuración');
       if (configButton) configButton.style.display = admin ? '' : 'none';
+      if ($('adminToolsNav')) $('adminToolsNav').style.display = admin ? '' : 'none';
+      if ($('adminContinuityCard')) $('adminContinuityCard').style.display = admin ? '' : 'none';
       refreshWelcome();
       resetInactivityTimer();
     }
@@ -1071,6 +1083,10 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       $('mActivos').textContent = d.active;
       $('mCotizaciones').textContent = d.pendingQuotes;
       $('mSeguimientos').textContent = d.followUps;
+      const continuity = d.whatsappReminders || {};
+      if ($('waToday')) $('waToday').textContent = continuity.today || 0;
+      if ($('waOverdue')) $('waOverdue').textContent = continuity.overdue || 0;
+      if ($('lastBackup')) $('lastBackup').textContent = continuity.last_backup?.created_at || 'Sin respaldo';
       $('stageGrid').innerHTML = d.byStage.map(s => `<div class="stage stage-click" onclick="setStageFilter('${esc(s.etapa || '')}')"><b>${s.total}</b><span>${s.etapa || 'Sin etapa'}</span></div>`).join('');
       renderMap(d.byZoneClients, d.alerts);
       const visibleClients = filteredDashboardClients(d.byZoneClients || []);
