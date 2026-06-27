@@ -1,0 +1,22 @@
+{
+  "name": "CMR - Bazar de Prefabricados",
+  "short_name": "CMR",
+  "description": "CRM comercial de Bazar de Prefabricados",
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#8f754d",
+  "theme_color": "#8f754d",
+  "icons": [
+    {
+      "src": "/cmr_icon_192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/cmr_icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

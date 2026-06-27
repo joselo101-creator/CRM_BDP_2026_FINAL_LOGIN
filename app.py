@@ -1401,6 +1401,12 @@ class Handler(BaseHTTPRequestHandler):
         qs = parse_qs(parsed.query)
         if path == "/login":
             return self._send(200, "text/html; charset=utf-8", login_page())
+        if path in ("/manifest.webmanifest", "/cmr_icon_192.png", "/cmr_icon_512.png", "/cmr_apple_180.png"):
+            target = APP_DIR / Path(path).name
+            if target.exists() and target.is_file():
+                content_type = "application/manifest+json; charset=utf-8" if target.suffix == ".webmanifest" else "image/png"
+                return self._send(200, content_type, target.read_bytes())
+            return self.json({"error": "Icono no encontrado"}, 404)
         if path == "/api/logout":
             return self._send(
                 303,
@@ -1429,6 +1435,10 @@ class Handler(BaseHTTPRequestHandler):
                     content_type = "text/css; charset=utf-8"
                 elif ext == ".js":
                     content_type = "application/javascript; charset=utf-8"
+                elif ext == ".webmanifest":
+                    content_type = "application/manifest+json; charset=utf-8"
+                elif ext == ".ico":
+                    content_type = "image/x-icon"
                 return self._send(200, content_type, target.read_bytes())
             return self.json({"error": "Asset no encontrado"}, 404)
         if not self.require_auth(path):
@@ -1453,6 +1463,10 @@ class Handler(BaseHTTPRequestHandler):
                     content_type = "text/css; charset=utf-8"
                 elif ext == ".js":
                     content_type = "application/javascript; charset=utf-8"
+                elif ext == ".webmanifest":
+                    content_type = "application/manifest+json; charset=utf-8"
+                elif ext == ".ico":
+                    content_type = "image/x-icon"
                 return self._send(200, content_type, target.read_bytes())
             return self.json({"error": "Asset no encontrado"}, 404)
         if path.startswith("/cotizaciones_pdf/"):
