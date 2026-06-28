@@ -1,0 +1,21 @@
+ACTUALIZACION RAILWAY - ROLES Y CONTROL DE COTIZACIONES
+
+1. Abra el repositorio CRM_BDP_2026_FINAL_LOGIN en GitHub.
+2. Sustituya los archivos de esta carpeta en la raiz del repositorio.
+3. No suba bdp_crm.sqlite, backups ni carpetas de cotizaciones.
+4. Confirme los cambios en GitHub.
+5. Railway iniciara un nuevo despliegue automaticamente.
+6. Espere Deployment successful y Active.
+7. Abra la direccion publica y actualice con Ctrl + F5.
+
+AL ENTRAR
+- admin aparece como Administrador general.
+- Los administradores existentes permanecen como Administrador.
+- Solo el Administrador general cambia o borra estatus y administra personal.
+- Cada cambio de estatus pide la clave del Administrador general que inicio sesion.
+
+ARCHIVOS PRINCIPALES MODIFICADOS
+- app.py
+- index.html
+
+La base activa de Railway se conserva en el volumen /data.

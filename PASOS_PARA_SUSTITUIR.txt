@@ -1,0 +1,33 @@
+ACTUALIZAR EL CRM EN GITHUB Y RAILWAY
+
+1. Abre tu repositorio CRM_BDP_2026_FINAL_LOGIN en GitHub.
+2. Entra en la pestana Code.
+3. Elimina o sustituye los archivos del mismo nombre que aparecen en esta carpeta.
+4. Sube TODOS los archivos de esta carpeta, excepto este instructivo si no deseas publicarlo.
+5. Confirma el cambio con el boton Commit changes.
+6. Espera a que Railway termine el nuevo despliegue.
+7. En Railway debe aparecer Deployment successful.
+8. Abre el dominio del CRM y actualiza la pagina con Ctrl + F5.
+
+ARCHIVOS PRINCIPALES MODIFICADOS
+- app.py
+- index.html
+
+ARCHIVOS DE APOYO QUE DEBEN PERMANECER
+- admin_tools.html
+- crm_extensions.py
+- requirements.txt
+- manifest.webmanifest
+- cmr_icon_192.png
+- cmr_icon_512.png
+- cmr_apple_180.png
+- Procfile
+- railway.toml
+
+NO SUBIR NI SUSTITUIR
+- bdp_crm.sqlite
+- carpetas backups
+- carpetas de cotizaciones PDF
+- archivos .env con contrasenas
+
+La base real continua en el volumen /data de Railway. Esta actualizacion no la borra.

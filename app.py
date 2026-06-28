@@ -216,7 +216,7 @@ TARIFAS = {
 
 DEFAULT_SETTINGS = {
     "user_name": "José Luis",
-    "user_role": "Administrador",
+    "user_role": "Administrador general",
     "company_name": "Bazar de Prefabricados",
     "annual_goal": "25000000",
     "monthly_goal_default": "2000000",
@@ -305,7 +305,7 @@ def ensure_business_tables(db):
             INSERT INTO users (username, password_hash, full_name, role, active, created_at, updated_at)
             VALUES (?, ?, ?, ?, 1, ?, ?)
             """,
-            (auth_user(), hash_password(auth_password()), "Administrador BDP", "Administrador", now_iso(), now_iso()),
+            (auth_user(), hash_password(auth_password()), "Administrador BDP", "Administrador general", now_iso(), now_iso()),
         )
 
 
@@ -579,6 +579,12 @@ def init_db():
             db.execute("ALTER TABLE quotes ADD COLUMN created_by TEXT DEFAULT ''")
         if "created_by_name" not in qcols:
             db.execute("ALTER TABLE quotes ADD COLUMN created_by_name TEXT DEFAULT ''")
+        general = db.execute("SELECT id FROM users WHERE role='Administrador general' ORDER BY id LIMIT 1").fetchone()
+        if not general:
+            preferred = db.execute("SELECT id FROM users WHERE username=? AND role='Administrador'", (auth_user(),)).fetchone()
+            promote = preferred or db.execute("SELECT id FROM users WHERE role='Administrador' ORDER BY id LIMIT 1").fetchone()
+            if promote:
+                db.execute("UPDATE users SET role='Administrador general', updated_at=? WHERE id=?", (now_iso(), promote["id"]))
         db.execute(
             """
             INSERT INTO quote_items
@@ -1294,7 +1300,11 @@ def public_user(row):
 
 
 def is_admin(user):
-    return bool(user and user["role"] == "Administrador")
+    return bool(user and user["role"] in ("Administrador general", "Administrador"))
+
+
+def is_general_admin(user):
+    return bool(user and user["role"] == "Administrador general")
 
 
 def owner_sql(user, alias=""):
@@ -1463,8 +1473,8 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             return self._send(200, "text/html; charset=utf-8", (APP_DIR / "index.html").read_bytes())
         if path == "/administracion":
-            if not is_admin(self.current_user()):
-                return self.json({"error": "Solo el administrador puede abrir esta seccion"}, 403)
+            if not is_general_admin(self.current_user()):
+                return self.json({"error": "Solo el administrador general puede abrir esta seccion"}, 403)
             return self._send(200, "text/html; charset=utf-8", (APP_DIR / "admin_tools.html").read_bytes())
         if path.startswith("/assets/"):
             filename = Path(path).name
@@ -1523,8 +1533,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.json({"user": public_user(self.current_user())})
         if path == "/api/users":
             user = self.current_user()
-            if not user or user["role"] != "Administrador":
-                return self.json({"error": "Solo administrador"}, 403)
+            if not is_admin(user):
+                return self.json({"error": "Solo administradores pueden consultar personal"}, 403)
             with conn() as db:
                 rows = db.execute("SELECT id, username, full_name, role, active, created_at, updated_at FROM users ORDER BY active DESC, full_name, username").fetchall()
             return self.json(rows_to_dicts(rows))
@@ -1648,13 +1658,7 @@ class Handler(BaseHTTPRequestHandler):
                     c_params + [overdue, thirty],
                 ).fetchall())
                 volume = db.execute(f"SELECT COUNT(*) FROM clients WHERE ({client_scope}) AND potencial='A'", client_params).fetchone()[0]
-                cfg = get_settings_payload(db)
-                month_now = today.month
-                sales_rows = cfg["monthlySales"]
-                current_sales = next((r for r in sales_rows if int(r["month"]) == month_now), {"amount": 0, "goal": 0})
-                annual_goal = float(cfg["settings"].get("annual_goal") or 0)
-                annual_sales = sum(float(r.get("amount") or 0) for r in sales_rows)
-            return self.json({"total": total, "active": active, "pendingQuotes": pending_quotes, "quotesMonth": quotes_month, "quotesWon": quotes_won, "quotesTotalAmount": quotes_total_amount, "quotesWonAmount": quotes_won_amount, "wonByZone": won_by_zone, "followUps": follows, "followUpRows": follow_up_rows, "byStage": by_stage, "byMunicipio": by_mun, "byZoneClients": by_zone_clients, "alerts": alerts, "altoPotencial": volume, "settings": cfg["settings"], "monthlySales": sales_rows, "currentSales": current_sales, "annualSales": annual_sales, "annualGoal": annual_goal, "months": MESES_ES, "whatsappReminders": EXTENSIONS.reminder_summary()})
+            return self.json({"total": total, "active": active, "pendingQuotes": pending_quotes, "quotesMonth": quotes_month, "quotesWon": quotes_won, "quotesTotalAmount": quotes_total_amount, "quotesWonAmount": quotes_won_amount, "wonByZone": won_by_zone, "followUps": follows, "followUpRows": follow_up_rows, "byStage": by_stage, "byMunicipio": by_mun, "byZoneClients": by_zone_clients, "alerts": alerts, "altoPotencial": volume, "whatsappReminders": EXTENSIONS.reminder_summary()})
         if path == "/api/quotes":
             scope, scope_params = quote_owner_sql(self.current_user(), "q")
             with conn() as db:
@@ -1671,6 +1675,8 @@ class Handler(BaseHTTPRequestHandler):
                     ).fetchall())
             return self.json(payload)
         if path == "/api/settings":
+            if not is_general_admin(self.current_user()):
+                return self.json({"error": "Solo el administrador general puede consultar la configuracion"}, 403)
             year = qs.get("year", [str(date.today().year)])[0]
             with conn() as db:
                 return self.json(get_settings_payload(db, year))
@@ -1692,8 +1698,8 @@ class Handler(BaseHTTPRequestHandler):
                 "Content-Disposition": f"attachment; filename=reporte_cotizaciones_{month or 'todo'}_{status or 'todas'}.pdf"
             })
         if path == "/api/export.xlsx":
-            if not is_admin(self.current_user()):
-                return self.json({"error": "Solo el administrador puede exportar toda la base"}, 403)
+            if not is_general_admin(self.current_user()):
+                return self.json({"error": "Solo el administrador general puede exportar toda la base"}, 403)
             data = export_xlsx()
             if data is None:
                 return self.json({"error": "No se pudo exportar a Excel"}, 500)
@@ -1704,7 +1710,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(data)
             return
         if path == "/api/admin/summary":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             return self.json({
                 "summary": EXTENSIONS.reminder_summary(),
@@ -1712,18 +1718,18 @@ class Handler(BaseHTTPRequestHandler):
                 "conflicts": EXTENSIONS.list_conflicts(),
             })
         if path == "/api/admin/backups":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             return self.json(EXTENSIONS.list_backups())
         if path == "/api/admin/backup/download":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             target = EXTENSIONS.backup_file(qs.get("name", [""])[0])
             if not target:
                 return self.json({"error": "Respaldo no encontrado"}, 404)
             return self._send(200, "application/zip", target.read_bytes(), {"Content-Disposition": f"attachment; filename={target.name}"})
         if path == "/api/admin/export":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             export_format = (qs.get("format", ["xlsx"])[0] or "xlsx").lower()
             if export_format == "json":
@@ -1732,17 +1738,17 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, "application/zip", EXTENSIONS.export_csv_zip(), {"Content-Disposition": "attachment; filename=CRM_BDP_CSV.zip"})
             return self._send(200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", EXTENSIONS.export_excel(), {"Content-Disposition": "attachment; filename=CRM_BDP_EXPORTACION.xlsx"})
         if path == "/api/admin/reminders":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             filters = {key: qs.get(key, [""])[0] for key in ("status", "date", "seller", "category", "client")}
             return self.json(EXTENSIONS.list_reminders(filters))
         if path == "/api/admin/reminders/export.xlsx":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             filters = {key: qs.get(key, [""])[0] for key in ("status", "date", "seller", "category", "client")}
             return self._send(200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", EXTENSIONS.export_reminders_excel(filters), {"Content-Disposition": "attachment; filename=REPORTE_RECORDATORIOS_WHATSAPP.xlsx"})
         if path == "/api/admin/sync/export":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             user = public_user(self.current_user()) or {}
             return self._send(200, "application/json; charset=utf-8", EXTENSIONS.export_sync_bundle(user.get("username", "admin")), {"Content-Disposition": "attachment; filename=CRM_BDP_DATOS_EMERGENCIA.json"})
@@ -1783,12 +1789,12 @@ class Handler(BaseHTTPRequestHandler):
         if not self.require_auth(parsed.path):
             return
         if parsed.path == "/api/admin/backup/create":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             user = public_user(self.current_user()) or {}
             return self.json({"ok": True, "backup": EXTENSIONS.create_backup("Manual", user.get("username", "admin"))})
         if parsed.path in ("/api/admin/backup/restore", "/api/admin/reminders/import", "/api/admin/sync/import"):
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             raw_upload = self.rfile.read(length) if length else b""
             upload, filename = parse_upload_file(raw_upload, ctype)
@@ -1806,7 +1812,7 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as exc:
                 return self.json({"error": str(exc)}, 400)
         if parsed.path == "/api/admin/reminder":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             raw_reminder = self.rfile.read(length) if length else b"{}"
             try:
@@ -1822,11 +1828,13 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 return self.json({"error": "JSON invÃ¡lido"}, 400)
             current = self.current_user()
-            if not current or current["role"] != "Administrador":
-                return self.json({"error": "Solo administrador"}, 403)
+            if not is_general_admin(current):
+                return self.json({"error": "Solo el administrador general puede administrar personal"}, 403)
             username = (data.get("username") or "").strip()
             full_name = (data.get("full_name") or username).strip()
             role = data.get("role") or "Vendedor"
+            if role not in ("Administrador", "Vendedor"):
+                role = "Vendedor"
             active = 1 if str(data.get("active", "1")) in ("1", "true", "True", "Activo", "on") else 0
             password = data.get("password") or ""
             if not username:
@@ -1836,6 +1844,8 @@ class Handler(BaseHTTPRequestHandler):
                     existing = db.execute("SELECT * FROM users WHERE id=?", (data.get("id"),)).fetchone()
                     if not existing:
                         return self.json({"error": "Usuario no encontrado"}, 404)
+                    if existing["role"] == "Administrador general":
+                        role = "Administrador general"
                     if password:
                         db.execute(
                             "UPDATE users SET username=?, full_name=?, role=?, active=?, password_hash=?, updated_at=? WHERE id=?",
@@ -1867,8 +1877,8 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 return self.json({"error": "JSON invalido"}, 400)
             current = self.current_user()
-            if not is_admin(current):
-                return self.json({"error": "Solo el administrador puede modificar productos"}, 403)
+            if not is_general_admin(current):
+                return self.json({"error": "Solo el administrador general puede modificar productos"}, 403)
             nombre = (data.get("nombre") or "").strip()
             if not nombre:
                 return self.json({"error": "Falta el nombre del producto"}, 400)
@@ -1893,8 +1903,8 @@ class Handler(BaseHTTPRequestHandler):
                 db.commit()
             return self.json({"ok": True})
         if parsed.path == "/api/import_excel":
-            if not is_admin(self.current_user()):
-                return self.json({"error": "Solo el administrador puede importar archivos"}, 403)
+            if not is_general_admin(self.current_user()):
+                return self.json({"error": "Solo el administrador general puede importar archivos"}, 403)
             if cgi is not None:
                 env = {"REQUEST_METHOD": "POST", "CONTENT_TYPE": ctype}
                 form = cgi.FieldStorage(fp=self.rfile, headers=self.headers, environ=env)
@@ -1987,18 +1997,20 @@ class Handler(BaseHTTPRequestHandler):
             return self.json({"ok": True})
         if parsed.path == "/api/user_status":
             current = self.current_user()
-            if not is_admin(current):
-                return self.json({"error": "Solo administrador"}, 403)
+            if not is_general_admin(current):
+                return self.json({"error": "Solo el administrador general puede activar personal"}, 403)
             uid = data.get("id")
             active = 1 if str(data.get("active", "1")) in ("1", "true", "True") else 0
             if not uid:
                 return self.json({"error": "Falta usuario"}, 400)
             with conn() as db:
-                row = db.execute("SELECT username FROM users WHERE id=?", (uid,)).fetchone()
+                row = db.execute("SELECT username, role FROM users WHERE id=?", (uid,)).fetchone()
                 if not row:
                     return self.json({"error": "Usuario no encontrado"}, 404)
                 if row["username"] == current["username"] and not active:
                     return self.json({"error": "No puedes desactivar tu propio usuario"}, 400)
+                if row["role"] == "Administrador general" and not active:
+                    return self.json({"error": "El administrador general no puede desactivarse"}, 400)
                 db.execute("UPDATE users SET active=?, updated_at=? WHERE id=?", (active, now_iso(), uid))
                 db.commit()
             return self.json({"ok": True, "active": active})
@@ -2197,17 +2209,37 @@ class Handler(BaseHTTPRequestHandler):
             return self.json({"ok": True, "pdf": pdf_url, "folio": data.get("folio") or "", "email": email_result, "whatsapp": ""})
 
         if parsed.path == "/api/quote_status":
+            current = self.current_user()
+            if not is_general_admin(current):
+                return self.json({"error": "Solo el administrador general puede modificar el estatus"}, 403)
+            if not verify_password(data.get("password") or "", current["password_hash"]):
+                return self.json({"error": "Clave del administrador general incorrecta"}, 403)
             qid = data.get("id")
             status = data.get("status") or "Elaborada"
+            allowed_statuses = {
+                "Elaborada", "Presentada al cliente", "Cambios solicitados", "En seguimiento",
+                "Aceptada / lista para pedido", "Lograda", "No aceptada", "Cancelada", "Borrar cotizacion"
+            }
             if not qid:
                 return self.json({"error": "Falta cotizacion"}, 400)
+            if status not in allowed_statuses:
+                return self.json({"error": "Estatus no permitido"}, 400)
             with conn() as db:
-                if not can_access_quote(db, self.current_user(), qid):
+                if not can_access_quote(db, current, qid):
                     return self.json({"error": "Cotizacion no encontrada o sin permiso"}, 404)
                 quote = db.execute("SELECT * FROM quotes WHERE id=?", (qid,)).fetchone()
                 if not quote:
                     return self.json({"error": "Cotizacion no encontrada"}, 404)
                 pdf_url = quote["pdf"] or ""
+                if status == "Borrar cotizacion":
+                    pdf_name = Path(pdf_url).name if pdf_url else ""
+                    db.execute("DELETE FROM quote_items WHERE quote_id=?", (qid,))
+                    db.execute("DELETE FROM quotes WHERE id=?", (qid,))
+                    db.commit()
+                    if pdf_name:
+                        for folder in (QUOTE_DIR, QUOTE_WON_DIR, QUOTE_PREVIEW_DIR):
+                            (folder / pdf_name).unlink(missing_ok=True)
+                    return self.json({"ok": True, "deleted": True})
                 if status == "Lograda" and pdf_url.startswith("/cotizaciones_pdf/"):
                     source = QUOTE_DIR / Path(pdf_url).name
                     target = QUOTE_WON_DIR / source.name
@@ -2220,8 +2252,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.json({"ok": True, "status": status, "pdf": pdf_url})
 
         if parsed.path == "/api/settings":
-            if not is_admin(self.current_user()):
-                return self.json({"error": "Solo el administrador puede cambiar la configuracion"}, 403)
+            if not is_general_admin(self.current_user()):
+                return self.json({"error": "Solo el administrador general puede cambiar la configuracion"}, 403)
             with conn() as db:
                 for k, v in (data.get("settings") or {}).items():
                     db.execute("INSERT INTO app_settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (k, str(v)))
@@ -2233,8 +2265,8 @@ class Handler(BaseHTTPRequestHandler):
                 db.commit()
             return self.json({"ok": True})
         if parsed.path == "/api/monthly_sales":
-            if not is_admin(self.current_user()):
-                return self.json({"error": "Solo el administrador puede cambiar proyecciones"}, 403)
+            if not is_general_admin(self.current_user()):
+                return self.json({"error": "Solo el administrador general puede cambiar esta informacion"}, 403)
             year = int(data.get("year") or date.today().year)
             with conn() as db:
                 for row in data.get("monthlySales", []):
@@ -2264,22 +2296,24 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/user":
             current = self.current_user()
-            if not current or current["role"] != "Administrador":
-                return self.json({"error": "Solo administrador"}, 403)
+            if not is_general_admin(current):
+                return self.json({"error": "Solo el administrador general puede administrar personal"}, 403)
             uid = qs.get("id", [""])[0]
             if not uid:
                 return self.json({"error": "Falta ID de usuario"}, 400)
             with conn() as db:
-                row = db.execute("SELECT username FROM users WHERE id=?", (uid,)).fetchone()
+                row = db.execute("SELECT username, role FROM users WHERE id=?", (uid,)).fetchone()
                 if not row:
                     return self.json({"error": "Usuario no encontrado"}, 404)
                 if row["username"] == current["username"]:
                     return self.json({"error": "No puedes desactivar tu propio usuario"}, 400)
+                if row["role"] == "Administrador general":
+                    return self.json({"error": "El administrador general no puede eliminarse"}, 400)
                 db.execute("UPDATE users SET active=0, updated_at=? WHERE id=?", (now_iso(), uid))
                 db.commit()
             return self.json({"ok": True})
         if parsed.path == "/api/admin/reminder":
-            if not is_admin(self.current_user()):
+            if not is_general_admin(self.current_user()):
                 return self.json({"error": "Solo administrador"}, 403)
             rid = qs.get("id", [""])[0]
             if not rid:
