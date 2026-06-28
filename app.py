@@ -13,6 +13,7 @@ import smtplib
 import sqlite3
 import threading
 import unicodedata
+import uuid
 from datetime import date, datetime, timedelta
 from email.message import EmailMessage
 from pathlib import Path
@@ -49,6 +50,7 @@ DB_PATH = DATA_DIR / "bdp_crm.sqlite"
 BACKUP_DIR = DATA_DIR / "backups"
 QUOTE_DIR = DATA_DIR / "cotizaciones_pdf_actuales"
 QUOTE_WON_DIR = DATA_DIR / "cotizaciones_logradas"
+QUOTE_PREVIEW_DIR = DATA_DIR / "cotizaciones_previsualizacion"
 SOURCE_XLSX = Path(r"C:\Users\Equipo\Documents\ANALISIS Y REPORTES 2026 BDP\control_visitas_red_distribuidores_nayarit.xlsx")
 EXTENSIONS = CRMExtensions(DB_PATH, DATA_DIR, BACKUP_DIR, QUOTE_DIR, QUOTE_WON_DIR)
 
@@ -61,7 +63,7 @@ def bootstrap_persistent_data():
     for src, dst in seed_files:
         if src.exists() and not dst.exists():
             shutil.copy2(src, dst)
-    for folder_name in ("backups", "cotizaciones_pdf_actuales", "cotizaciones_logradas"):
+    for folder_name in ("backups", "cotizaciones_pdf_actuales", "cotizaciones_logradas", "cotizaciones_previsualizacion"):
         src_dir = APP_DIR / folder_name
         dst_dir = DATA_DIR / folder_name
         dst_dir.mkdir(parents=True, exist_ok=True)
@@ -419,6 +421,7 @@ def init_db():
     BACKUP_DIR.mkdir(exist_ok=True)
     QUOTE_DIR.mkdir(exist_ok=True)
     QUOTE_WON_DIR.mkdir(exist_ok=True)
+    QUOTE_PREVIEW_DIR.mkdir(exist_ok=True)
     with conn() as db:
         db.executescript(
             """
@@ -972,12 +975,14 @@ def amount_to_words_mxn(value):
     return f"SON: {amount_words_for_pesos(pesos).upper()} {currency} {cents:02d}/100 M.N."
 
 
-def generate_quote_pdf(client, data):
+def generate_quote_pdf(client, data, output_dir=None, filename_override=None):
     if SimpleDocTemplate is None:
         return None
     safe_name = "".join(ch for ch in client["nombre_comercial"] if ch.isalnum() or ch in (" ", "_", "-")).strip().replace(" ", "_")
-    filename = f"{data.get('folio') or 'cotizacion'}_{safe_name or 'cliente'}.pdf"
-    path = QUOTE_DIR / filename
+    filename = filename_override or f"{data.get('folio') or 'cotizacion'}_{safe_name or 'cliente'}.pdf"
+    target_dir = Path(output_dir or QUOTE_DIR)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    path = target_dir / filename
     logo = APP_DIR / "assets" / "logo.png"
     doc = SimpleDocTemplate(str(path), pagesize=letter, rightMargin=28, leftMargin=28, topMargin=24, bottomMargin=24)
     styles = getSampleStyleSheet()
@@ -1353,6 +1358,14 @@ def login_page(error=""):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        # El ejecutable local no tiene consola; registrar ahi cerraba la solicitud.
+        if os.environ.get("CRM_HTTP_LOG") == "1":
+            try:
+                super().log_message(format, *args)
+            except (AttributeError, OSError):
+                pass
+
     def _send(self, status=200, content_type="application/json", body=b"", headers=None):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
@@ -1495,6 +1508,12 @@ class Handler(BaseHTTPRequestHandler):
             if allowed and target.exists() and target.is_file():
                 return self._send(200, "application/pdf", target.read_bytes())
             return self.json({"error": "PDF no encontrado"}, 404)
+        if path.startswith("/cotizaciones_previsualizacion/"):
+            filename = Path(path).name
+            target = QUOTE_PREVIEW_DIR / filename
+            if target.exists() and target.is_file() and filename.startswith("PREVIEW_"):
+                return self._send(200, "application/pdf", target.read_bytes())
+            return self.json({"error": "Previsualizacion no encontrada"}, 404)
         if path == "/api/options":
             
             with conn() as db:
@@ -1568,7 +1587,29 @@ class Handler(BaseHTTPRequestHandler):
                 quotes_won = db.execute(f"SELECT COUNT(*) FROM quotes WHERE ({quote_scope}) AND status='Lograda'", quote_params).fetchone()[0]
                 quotes_total_amount = db.execute(f"SELECT COALESCE(SUM(total),0) FROM quotes WHERE {quote_scope}", quote_params).fetchone()[0]
                 quotes_won_amount = db.execute(f"SELECT COALESCE(SUM(total),0) FROM quotes WHERE ({quote_scope}) AND status='Lograda'", quote_params).fetchone()[0]
+                q_scope, q_params = quote_owner_sql(self.current_user(), "q")
+                won_by_zone = rows_to_dicts(db.execute(
+                    f"""
+                    SELECT COALESCE(NULLIF(c.zona,''),'Sin zona') zona,
+                           COUNT(q.id) cotizaciones,
+                           COALESCE(SUM(q.total),0) total
+                    FROM quotes q LEFT JOIN clients c ON c.id=q.client_id
+                    WHERE ({q_scope}) AND q.status='Lograda'
+                    GROUP BY COALESCE(NULLIF(c.zona,''),'Sin zona')
+                    ORDER BY total DESC
+                    """, q_params
+                ).fetchall())
                 follows = db.execute(f"SELECT COUNT(*) FROM interactions i JOIN clients c ON c.id=i.client_id WHERE ({c_scope}) AND i.fecha_seguimiento<>'' AND i.fecha_seguimiento<=?", c_params + [overdue]).fetchone()[0]
+                follow_up_rows = rows_to_dicts(db.execute(
+                    f"""
+                    SELECT i.id interaction_id, i.client_id, i.fecha, i.hora, i.tipo_contacto,
+                           i.comentarios, i.proxima_accion, i.fecha_seguimiento,
+                           c.nombre_comercial, c.municipio, c.zona, c.etapa
+                    FROM interactions i JOIN clients c ON c.id=i.client_id
+                    WHERE ({c_scope}) AND i.fecha_seguimiento<>'' AND i.fecha_seguimiento<=?
+                    ORDER BY i.fecha_seguimiento, c.nombre_comercial
+                    """, c_params + [overdue]
+                ).fetchall())
                 by_stage = rows_to_dicts(db.execute(f"SELECT etapa, COUNT(*) total FROM clients WHERE {client_scope} GROUP BY etapa ORDER BY total DESC", client_params).fetchall())
                 by_mun = rows_to_dicts(db.execute(f"SELECT municipio, zona, COUNT(*) total FROM clients WHERE {client_scope} GROUP BY municipio, zona ORDER BY total DESC", client_params).fetchall())
                 by_zone_clients = rows_to_dicts(db.execute(
@@ -1613,7 +1654,7 @@ class Handler(BaseHTTPRequestHandler):
                 current_sales = next((r for r in sales_rows if int(r["month"]) == month_now), {"amount": 0, "goal": 0})
                 annual_goal = float(cfg["settings"].get("annual_goal") or 0)
                 annual_sales = sum(float(r.get("amount") or 0) for r in sales_rows)
-            return self.json({"total": total, "active": active, "pendingQuotes": pending_quotes, "quotesMonth": quotes_month, "quotesWon": quotes_won, "quotesTotalAmount": quotes_total_amount, "quotesWonAmount": quotes_won_amount, "followUps": follows, "byStage": by_stage, "byMunicipio": by_mun, "byZoneClients": by_zone_clients, "alerts": alerts, "altoPotencial": volume, "settings": cfg["settings"], "monthlySales": sales_rows, "currentSales": current_sales, "annualSales": annual_sales, "annualGoal": annual_goal, "months": MESES_ES, "whatsappReminders": EXTENSIONS.reminder_summary()})
+            return self.json({"total": total, "active": active, "pendingQuotes": pending_quotes, "quotesMonth": quotes_month, "quotesWon": quotes_won, "quotesTotalAmount": quotes_total_amount, "quotesWonAmount": quotes_won_amount, "wonByZone": won_by_zone, "followUps": follows, "followUpRows": follow_up_rows, "byStage": by_stage, "byMunicipio": by_mun, "byZoneClients": by_zone_clients, "alerts": alerts, "altoPotencial": volume, "settings": cfg["settings"], "monthlySales": sales_rows, "currentSales": current_sales, "annualSales": annual_sales, "annualGoal": annual_goal, "months": MESES_ES, "whatsappReminders": EXTENSIONS.reminder_summary()})
         if path == "/api/quotes":
             scope, scope_params = quote_owner_sql(self.current_user(), "q")
             with conn() as db:
@@ -1930,6 +1971,99 @@ class Handler(BaseHTTPRequestHandler):
                     db.execute("UPDATE clients SET etapa=?, updated_at=? WHERE id=?", (data["etapa"], now_iso(), cid))
                 db.commit()
             return self.json({"ok": True})
+        if parsed.path == "/api/followup_reviewed":
+            interaction_id = data.get("id")
+            if not interaction_id:
+                return self.json({"error": "Falta seguimiento"}, 400)
+            with conn() as db:
+                row = db.execute("SELECT client_id FROM interactions WHERE id=?", (interaction_id,)).fetchone()
+                if not row or not can_access_client(db, self.current_user(), row["client_id"]):
+                    return self.json({"error": "Seguimiento no encontrado o sin permiso"}, 404)
+                db.execute(
+                    "UPDATE interactions SET fecha_seguimiento='', resultado=CASE WHEN COALESCE(resultado,'')='' THEN 'Seguimiento revisado' ELSE resultado END, updated_at=? WHERE id=?",
+                    (now_iso(), interaction_id),
+                )
+                db.commit()
+            return self.json({"ok": True})
+        if parsed.path == "/api/user_status":
+            current = self.current_user()
+            if not is_admin(current):
+                return self.json({"error": "Solo administrador"}, 403)
+            uid = data.get("id")
+            active = 1 if str(data.get("active", "1")) in ("1", "true", "True") else 0
+            if not uid:
+                return self.json({"error": "Falta usuario"}, 400)
+            with conn() as db:
+                row = db.execute("SELECT username FROM users WHERE id=?", (uid,)).fetchone()
+                if not row:
+                    return self.json({"error": "Usuario no encontrado"}, 404)
+                if row["username"] == current["username"] and not active:
+                    return self.json({"error": "No puedes desactivar tu propio usuario"}, 400)
+                db.execute("UPDATE users SET active=?, updated_at=? WHERE id=?", (active, now_iso(), uid))
+                db.commit()
+            return self.json({"ok": True, "active": active})
+        if parsed.path == "/api/quote_preview_delete":
+            filename = Path(data.get("filename") or "").name
+            if filename.startswith("PREVIEW_"):
+                (QUOTE_PREVIEW_DIR / filename).unlink(missing_ok=True)
+            return self.json({"ok": True})
+        if parsed.path == "/api/quote_preview":
+            cid = data.get("client_id")
+            if not cid:
+                return self.json({"error": "Falta cliente"}, 400)
+            raw_items = data.get("items") or []
+            items = []
+            for raw_item in raw_items:
+                producto = (raw_item.get("producto") or "").strip()
+                item_cantidad = float(raw_item.get("cantidad") or 0)
+                item_precio = float(raw_item.get("precio_unitario") or 0)
+                if producto and item_cantidad > 0:
+                    items.append({"producto": producto, "cantidad": item_cantidad, "precio_unitario": item_precio})
+            if not items:
+                return self.json({"error": "Agrega al menos un producto con cantidad"}, 400)
+            cantidad = sum(item["cantidad"] for item in items)
+            material_total = sum(item["cantidad"] * item["precio_unitario"] for item in items)
+            km_flete = float(data.get("km_flete") or 0)
+            tarifa_km = float(data.get("tarifa_km") or 0)
+            casetas = float(data.get("casetas") or 0)
+            flete_base = km_flete * tarifa_km
+            flete_total = flete_base + casetas
+            total = material_total + flete_total
+            requiere_factura = str(data.get("requiere_factura", "")).lower() in ("1", "si", "sí", "true", "on")
+            for item in items:
+                item["subtotal_material"] = item["cantidad"] * item["precio_unitario"]
+                item["flete_unitario"] = 0
+                item["costo_unitario_entregado"] = item["precio_unitario"]
+            data.update({
+                "items": items,
+                "producto": " + ".join(item["producto"] for item in items),
+                "productos_ofrecidos": " + ".join(item["producto"] for item in items),
+                "cantidad": cantidad,
+                "precio_unitario": items[0]["precio_unitario"] if len(items) == 1 else 0,
+                "km_flete": km_flete,
+                "tarifa_km": tarifa_km,
+                "flete_base": flete_base,
+                "flete_total": flete_total,
+                "flete_unitario": 0,
+                "casetas": casetas,
+                "total": total,
+                "requiere_factura": 1 if requiere_factura else 0,
+                "subtotal": round(total / 1.16, 2) if requiere_factura else total,
+                "iva": round(total - (total / 1.16), 2) if requiere_factura else 0,
+                "total_con_iva": total,
+                "created_by": actor_username,
+                "created_by_name": actor_name,
+            })
+            with conn() as db:
+                if not can_access_client(db, self.current_user(), cid):
+                    return self.json({"error": "Cliente no encontrado o sin permiso"}, 404)
+                client = db.execute("SELECT * FROM clients WHERE id=?", (cid,)).fetchone()
+                folio_material = items[0]["producto"] if len(items) == 1 else "Carga mixta"
+                data["folio"] = build_quote_folio(db, data.get("fecha") or date.today().isoformat(), folio_material)
+            token = uuid.uuid4().hex
+            filename = f"PREVIEW_{token}.pdf"
+            generate_quote_pdf(client, data, QUOTE_PREVIEW_DIR, filename)
+            return self.json({"ok": True, "pdf": f"/cotizaciones_previsualizacion/{filename}", "filename": filename, "folio": data["folio"]})
         if parsed.path == "/api/quote":
             cid = data.get("client_id")
             if not cid:
@@ -1994,7 +2128,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not client:
                     return self.json({"error": "Cliente no encontrado"}, 404)
                 folio_material = items[0]["producto"] if len(items) == 1 else "Carga mixta"
-                data["folio"] = build_quote_folio(db, data.get("fecha") or date.today().isoformat(), folio_material)
+                requested_folio = (data.get("folio") or "").strip()
+                folio_used = requested_folio and db.execute("SELECT id FROM quotes WHERE folio=?", (requested_folio,)).fetchone()
+                data["folio"] = requested_folio if requested_folio and not folio_used else build_quote_folio(db, data.get("fecha") or date.today().isoformat(), folio_material)
                 add_interaction(db, cid, data)
                 db.execute("UPDATE clients SET etapa=?, updated_at=? WHERE id=?", ("Cotización enviada", now_iso(), cid))
                 db.commit()
