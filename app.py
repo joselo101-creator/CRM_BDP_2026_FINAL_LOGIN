@@ -46,7 +46,11 @@ except Exception:
 
 APP_DIR = Path(__file__).resolve().parent
 IS_RAILWAY = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID") or os.environ.get("RAILWAY_SERVICE_ID"))
-DATA_DIR = Path("/data" if IS_RAILWAY else os.environ.get("DATA_DIR", str(APP_DIR))).resolve()
+RAILWAY_VOLUME_MOUNT_PATH = (os.environ.get("RAILWAY_VOLUME_MOUNT_PATH") or "").strip()
+if IS_RAILWAY:
+    DATA_DIR = Path(RAILWAY_VOLUME_MOUNT_PATH or os.environ.get("DATA_DIR") or "/data").resolve()
+else:
+    DATA_DIR = Path(os.environ.get("DATA_DIR", str(APP_DIR))).resolve()
 DB_PATH = DATA_DIR / "bdp_crm.sqlite"
 BACKUP_DIR = DATA_DIR / "backups"
 QUOTE_DIR = DATA_DIR / "cotizaciones_pdf_actuales"
