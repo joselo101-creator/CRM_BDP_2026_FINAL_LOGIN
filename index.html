@@ -202,12 +202,12 @@ header::before{display:none!important} header>img.logo{display:block!important;h
 @media(max-width:1180px){.dashboard-priority,.stage-filter-top,.settings-grid{grid-template-columns:1fr}.radar-super .map-wrap,.radar-super .nayarit-map{min-height:360px;height:360px}.stage-filter-top .stage-grid{grid-template-columns:repeat(2,1fr)}}
 
 button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;cursor:pointer;padding:22px}
-.mobile-only{display:none}.quote-items{display:grid;gap:10px}.quote-item{display:grid;grid-template-columns:minmax(220px,1.6fr) minmax(110px,.55fr) minmax(130px,.65fr) 46px;gap:10px;align-items:end;padding:12px;background:#f8f6f1;border:1px solid var(--line);border-radius:12px}.quote-item .remove-item{width:46px;height:46px;padding:0;font-size:20px}
+.mobile-only{display:none}.quote-items{display:grid;gap:10px}.quote-item{display:grid;grid-template-columns:minmax(220px,1.6fr) minmax(150px,.7fr) minmax(130px,.65fr) 46px;gap:10px;align-items:end;padding:12px;background:#f8f6f1;border:1px solid var(--line);border-radius:12px}.quote-item .remove-item{width:46px;height:46px;padding:0;font-size:20px}.qty-input-row{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:6px}.calc-icon{width:46px;height:46px;min-height:46px;padding:0;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--brand);font-size:21px;cursor:pointer}.pallet-calc{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:7px;padding:9px;background:#fff;border:1px solid var(--line);border-radius:8px}.pallet-calc input{min-width:0}.pallet-calc .btn{min-height:42px;padding:8px 12px}.discount-card{padding:14px;border:1px solid rgba(143,117,77,.28);background:#fbf7ef;border-radius:10px}.discount-toggle{display:flex;align-items:center;gap:10px;font-weight:900}.discount-toggle input{width:20px;height:20px;min-height:20px;accent-color:var(--brand)}.discount-fields{margin-top:12px}.discount-reason{grid-column:1/-1}
 .dashboard-priority{display:block}.radar-super{min-height:650px}.radar-super .map-panel,.radar-super .map-card{min-height:650px}.radar-super .map-wrap{min-height:590px}.radar-super .nayarit-map{height:590px}.zone-sales-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.zone-sale{padding:14px;border:1px solid var(--line);border-left:6px solid var(--zone-color,#8f754d);border-radius:12px;background:#fff;text-align:left;color:inherit;cursor:pointer}.zone-sale strong{display:block;font-size:22px;margin:4px 0}.pdf-preview-frame{display:block;width:100%;height:72vh;min-height:650px;border:1px solid var(--line);border-radius:12px;background:#ddd}.municipio-click{width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer}.municipio-click:hover{border-color:rgba(143,117,77,.45);background:#fffaf2}
 @media(max-width:1180px){.zone-sales-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.radar-super .map-wrap,.radar-super .nayarit-map{min-height:470px;height:470px}.radar-super .map-panel,.radar-super .map-card{min-height:auto}}
 @media(max-width:768px){
   .mobile-only{display:block}.mobile-optional{display:none!important}.mobile-optional.mobile-open{display:grid!important}
-  html,body{max-width:100%;overflow-x:hidden}input,select,textarea,.btn{min-height:48px;font-size:16px}.app{width:auto;max-width:100%;padding:10px 10px 110px}.card{padding:15px}.quote-item{grid-template-columns:1fr}.quote-item .remove-item{width:100%}
+  html,body{max-width:100%;overflow-x:hidden}input,select,textarea,.btn{min-height:48px;font-size:16px}.app{width:auto;max-width:100%;padding:10px 10px 110px}.card{padding:15px}.quote-item{grid-template-columns:1fr}.quote-item .remove-item{width:100%}.pallet-calc{grid-template-columns:1fr 1fr}.pallet-calc .btn{grid-column:1/-1;width:100%}
   header{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px}header h1{font-size:23px;line-height:1.08;letter-spacing:0}header .subtitle{font-size:12px;line-height:1.25}header>div::after{display:none!important}.brand-chip,.date-chip{display:none!important}.top-actions{gap:5px;align-self:center}.icon-btn{width:36px;height:36px;font-size:17px}.tabs{grid-template-columns:repeat(5,minmax(0,1fr));overflow:hidden}.tabs button{min-width:0;font-size:9.5px;line-height:1.1;padding:8px 2px}.tabs button:nth-child(6){display:none}
   .tabs button:nth-child(3){order:1}.tabs button:nth-child(4){order:2}.tabs button:nth-child(2){order:3}.tabs button:nth-child(5){order:4}.tabs button:nth-child(1){order:5}.tabs button:nth-child(6){order:6}
   #quick .card>h2{font-size:24px}.section-title{align-items:flex-start;gap:8px}.section-title .btn{width:auto}
@@ -440,6 +440,16 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
             <div class="row">
               <div><label>Kilómetros de flete</label><input name="km_flete" id="quoteKm" type="number" step="0.1" value="0" inputmode="decimal"></div>
               <div><label>Casetas de cobro</label><input name="casetas" id="quoteCasetas" type="number" step="0.01" value="0" inputmode="decimal"></div>
+            </div>
+            <div class="discount-card" id="quoteDiscountCard" style="display:none">
+              <label class="discount-toggle"><input type="checkbox" id="quoteDiscountActive" name="descuento_activo"> Aplicar descuento autorizado</label>
+              <div class="discount-fields hidden" id="quoteDiscountFields">
+                <div class="row">
+                  <div><label>Porcentaje de descuento</label><input id="quoteDiscountPercent" name="descuento_porcentaje" type="number" min="0.01" max="100" step="0.01" inputmode="decimal" placeholder="Ej. 5"></div>
+                  <div><label>Aplicar sobre</label><select id="quoteDiscountApplication" name="descuento_aplicacion"><option value="Material">Solo material</option><option value="Total">Monto total</option></select></div>
+                </div>
+                <div class="discount-reason"><label>Motivo del descuento</label><input id="quoteDiscountReason" name="descuento_motivo" maxlength="240" placeholder="Ej. Promoción de lunes, volumen, reposición o cierre de cliente"></div>
+              </div>
             </div>
             <div class="row">
               <div><label>Fecha seguimiento</label><input name="fecha_seguimiento" type="date"></div>
@@ -781,6 +791,11 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       if ($('adminToolsNav')) $('adminToolsNav').style.display = general ? '' : 'none';
       if ($('adminContinuityCard')) $('adminContinuityCard').style.display = general ? '' : 'none';
       if ($('sensitiveToolsCard')) $('sensitiveToolsCard').style.display = general ? '' : 'none';
+      if ($('quoteDiscountCard')) $('quoteDiscountCard').style.display = admin ? '' : 'none';
+      if (!admin && $('quoteDiscountActive')) {
+        $('quoteDiscountActive').checked = false;
+        $('quoteDiscountFields')?.classList.add('hidden');
+      }
       ['Pedidos','Productos','Reportes','Documentos'].forEach(label => {
         const button = tab(label);
         if (button) button.style.display = admin ? '' : 'none';
@@ -1003,6 +1018,9 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       $('quoteMunicipio').addEventListener('change', quoteZone);
       $('quoteFactura')?.addEventListener('change', calcQuote);
       ['quoteTarifa','quoteKm','quoteCasetas'].forEach(id => $(id).addEventListener('input', calcQuote));
+      $('quoteDiscountActive')?.addEventListener('change', toggleQuoteDiscount);
+      ['quoteDiscountPercent','quoteDiscountReason'].forEach(id => $(id)?.addEventListener('input', calcQuote));
+      $('quoteDiscountApplication')?.addEventListener('change', calcQuote);
       if (!$('quoteItems').children.length) addQuoteItem({cantidad:1000});
     }
 
@@ -1275,6 +1293,7 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
             <div class="client-name">${esc(q.cliente || 'Cliente')}</div>
             <div class="small">${esc(q.folio || 'Sin folio')} - ${esc(q.fecha || '')} - ${esc(q.producto || '')} - Total IVA incluido ${money(q.total_con_iva || q.total)} - ${esc(q.municipio || '')}</div>
             <div class="small">Situacion: <strong>${esc(q.status || 'Elaborada')}</strong> · Elaboro: ${esc(q.created_by_name || q.created_by || '-')}</div>
+            ${Number(q.descuento_activo || 0) ? `<div class="small"><strong>Descuento ${Number(q.descuento_porcentaje || 0).toFixed(2)}%</strong> sobre ${esc(String(q.descuento_aplicacion || 'Material').toLowerCase())}: -${money(q.descuento_monto)} · ${esc(q.descuento_motivo || '')}</div>` : ''}
           </div>
           <div style="display:grid;gap:6px;justify-items:end">
             ${canChangeStatus ? `<select aria-label="Cambiar estatus de ${esc(q.folio || 'cotizacion')}" onchange="updateQuoteStatus(${q.id}, this.value)">
@@ -1326,6 +1345,13 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       $('quoteTarifa').value = q.tarifa_km || '';
       $('quoteCasetas').value = q.casetas || 0;
       if ($('quoteFactura')) $('quoteFactura').value = String(q.requiere_factura || '0');
+      if ($('quoteDiscountActive')) {
+        $('quoteDiscountActive').checked = canAuthorizeDiscount() && Boolean(Number(q.descuento_activo || 0));
+        $('quoteDiscountPercent').value = q.descuento_porcentaje || '';
+        $('quoteDiscountApplication').value = q.descuento_aplicacion || 'Material';
+        $('quoteDiscountReason').value = q.descuento_motivo || '';
+        toggleQuoteDiscount();
+      }
       const note = $('quoteNote');
       if (note) note.value = `Nueva version basada en ${q.folio || 'cotizacion anterior'}.`;
       calcQuote();
@@ -1363,7 +1389,18 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       row.className = 'quote-item';
       row.innerHTML = `
         <div><label>Producto</label><select class="quote-item-product">${productOptions(item.producto || '')}</select></div>
-        <div><label>Cantidad</label><input class="quote-item-qty" type="number" min="1" step="1" inputmode="numeric" value="${item.cantidad || ''}"></div>
+        <div>
+          <label>Cantidad</label>
+          <div class="qty-input-row">
+            <input class="quote-item-qty" type="number" min="1" step="1" inputmode="numeric" value="${item.cantidad || ''}">
+            <button class="calc-icon" type="button" title="Calcular piezas por tarimas" aria-label="Calcular piezas por tarimas" onclick="togglePalletCalculator(this)">▦</button>
+          </div>
+          <div class="pallet-calc hidden">
+            <input class="pallet-count" type="number" min="1" step="1" inputmode="numeric" placeholder="Tarimas" aria-label="Número de tarimas">
+            <input class="pieces-per-pallet" type="number" min="1" step="1" inputmode="numeric" placeholder="Pzas/tarima" aria-label="Piezas por tarima">
+            <button class="btn secondary" type="button" onclick="applyPalletCalculation(this)">Aplicar</button>
+          </div>
+        </div>
         <div><label>Precio unitario</label><input class="quote-item-price" type="number" min="0" step="0.01" inputmode="decimal" value="${item.precio_unitario ?? ''}"></div>
         <button class="btn secondary remove-item" type="button" title="Quitar producto">×</button>`;
       $('quoteItems').appendChild(row);
@@ -1383,6 +1420,20 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       calcQuote();
     }
 
+    function togglePalletCalculator(button) {
+      button.closest('.quote-item')?.querySelector('.pallet-calc')?.classList.toggle('hidden');
+    }
+
+    function applyPalletCalculation(button) {
+      const row = button.closest('.quote-item');
+      const pallets = Number(row.querySelector('.pallet-count').value || 0);
+      const pieces = Number(row.querySelector('.pieces-per-pallet').value || 0);
+      if (pallets <= 0 || pieces <= 0) return alert('Captura tarimas y piezas por tarima mayores a cero.');
+      row.querySelector('.quote-item-qty').value = Math.round(pallets * pieces);
+      row.querySelector('.pallet-calc').classList.add('hidden');
+      calcQuote();
+    }
+
     function quoteItemsData() {
       return [...document.querySelectorAll('.quote-item')].map(row => ({
         producto: row.querySelector('.quote-item-product').value,
@@ -1398,6 +1449,17 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       calcQuote();
     }
 
+    function canAuthorizeDiscount() {
+      return ['Administrador general','Administrador'].includes(CURRENT_USER?.role);
+    }
+
+    function toggleQuoteDiscount() {
+      const active = canAuthorizeDiscount() && Boolean($('quoteDiscountActive')?.checked);
+      if ($('quoteDiscountActive') && !canAuthorizeDiscount()) $('quoteDiscountActive').checked = false;
+      $('quoteDiscountFields')?.classList.toggle('hidden', !active);
+      calcQuote();
+    }
+
     function calcQuote() {
       const items = quoteItemsData().map(item => ({...item, subtotal_material:item.cantidad * item.precio_unitario}));
       const cantidad = items.reduce((sum,item)=>sum+item.cantidad,0);
@@ -1408,7 +1470,15 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       const requiereFactura = $('quoteFactura')?.value === '1';
       const fleteBase = km * tarifa;
       const flete = fleteBase + casetas;
-      const total = materialTotal + flete;
+      const descuentoActivo = canAuthorizeDiscount() && Boolean($('quoteDiscountActive')?.checked);
+      const descuentoPorcentaje = descuentoActivo ? Math.min(100, Math.max(0, Number($('quoteDiscountPercent')?.value || 0))) : 0;
+      const descuentoAplicacion = $('quoteDiscountApplication')?.value === 'Total' ? 'Total' : 'Material';
+      const descuentoMotivo = descuentoActivo ? String($('quoteDiscountReason')?.value || '').trim() : '';
+      const descuentoBase = descuentoAplicacion === 'Total' ? materialTotal + flete : materialTotal;
+      const descuentoMonto = descuentoActivo ? descuentoBase * descuentoPorcentaje / 100 : 0;
+      const materialNeto = descuentoAplicacion === 'Material' ? materialTotal - descuentoMonto : materialTotal;
+      const totalAntesDescuento = materialTotal + flete;
+      const total = totalAntesDescuento - descuentoMonto;
       const subtotal = requiereFactura ? total / 1.16 : total;
       const iva = requiereFactura ? total - subtotal : 0;
       const totalConIva = total;
@@ -1417,9 +1487,10 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
         <div><label>Casetas</label><div class="quote-total">${money(casetas)}</div></div>
         <div><label>Total materiales</label><div class="quote-total">${money(materialTotal)}</div></div>
         <div><label>Flete y casetas</label><div class="quote-total">${money(flete)}</div></div>
+        ${descuentoActivo ? `<div><label>Descuento ${descuentoPorcentaje.toFixed(2)}% sobre ${descuentoAplicacion === 'Material' ? 'material' : 'total'}</label><div class="quote-total">- ${money(descuentoMonto)}</div></div><div><label>Motivo</label><div class="small">${esc(descuentoMotivo || 'Pendiente de capturar')}</div></div>` : ''}
         <div><label>Total final IVA incluido</label><div class="quote-total">${money(totalConIva)}</div></div>
         ${requiereFactura ? `<div><label>Subtotal antes de IVA</label><div class="quote-total">${money(subtotal)}</div></div><div><label>IVA incluido 16%</label><div class="quote-total">${money(iva)}</div></div>` : ''}`;
-      return { items, cantidad, materialTotal, km, tarifa, casetas, fleteBase, flete, total, subtotal, requiereFactura, iva, totalConIva };
+      return { items, cantidad, materialTotal, materialNeto, km, tarifa, casetas, fleteBase, flete, totalAntesDescuento, total, subtotal, requiereFactura, iva, totalConIva, descuentoActivo, descuentoPorcentaje, descuentoAplicacion, descuentoMotivo, descuentoMonto };
     }
 
     function buildQuotePayload(form) {
@@ -1438,11 +1509,16 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       data.iva = q.iva.toFixed(2);
       data.total_con_iva = q.totalConIva.toFixed(2);
       data.requiere_factura = q.requiereFactura ? '1' : '0';
+      data.descuento_activo = q.descuentoActivo ? '1' : '0';
+      data.descuento_porcentaje = q.descuentoPorcentaje.toFixed(2);
+      data.descuento_aplicacion = q.descuentoAplicacion;
+      data.descuento_motivo = q.descuentoMotivo;
       data.resultado = 'Cotizacion enviada';
       data.etapa = 'Cotizacion enviada';
       data.proxima_accion = 'Dar seguimiento a cotizacion por WhatsApp';
       const itemNotes = q.items.map(item=>`${item.producto}: ${item.cantidad} pzas x ${money(item.precio_unitario)} = ${money(item.subtotal_material)}`).join('. ');
-      data.comentarios = `Cotizacion de carga consolidada. ${itemNotes}. Total materiales: ${money(q.materialTotal)}. Flete base independiente: ${money(q.fleteBase)} (${q.km} km x ${money(q.tarifa)}). Casetas: ${money(q.casetas)}. Flete y casetas: ${money(q.flete)}. Total final con IVA incluido: ${money(q.totalConIva)}. ${q.requiereFactura ? `Subtotal: ${money(q.subtotal)}. IVA incluido 16%: ${money(q.iva)}.` : 'Sin desglose fiscal solicitado.'} ${data.nota_flete || ''} ${data.comentarios || ''}`;
+      const discountNote = q.descuentoActivo ? `Descuento autorizado de ${q.descuentoPorcentaje.toFixed(2)}% sobre ${q.descuentoAplicacion === 'Material' ? 'material' : 'monto total'}: -${money(q.descuentoMonto)}. Motivo: ${q.descuentoMotivo}.` : 'Sin descuento adicional.';
+      data.comentarios = `Cotizacion de carga consolidada. ${itemNotes}. Total materiales: ${money(q.materialTotal)}. Flete base independiente: ${money(q.fleteBase)} (${q.km} km x ${money(q.tarifa)}). Casetas: ${money(q.casetas)}. Flete y casetas: ${money(q.flete)}. ${discountNote} Total final con IVA incluido: ${money(q.totalConIva)}. ${q.requiereFactura ? `Subtotal: ${money(q.subtotal)}. IVA incluido 16%: ${money(q.iva)}.` : 'Sin desglose fiscal solicitado.'} ${data.nota_flete || ''} ${data.comentarios || ''}`;
       data.__calc = q;
       return data;
     }
@@ -1832,6 +1908,12 @@ button.module-card{min-height:190px;text-align:left;color:inherit;font:inherit;c
       e.preventDefault();
       if (!$('quoteClient').value) return alert('Escribe y selecciona un cliente de la lista.');
       if (!quoteItemsData().length) return alert('Agrega al menos un producto con cantidad.');
+      if ($('quoteDiscountActive')?.checked) {
+        if (!canAuthorizeDiscount()) return alert('Solo un administrador puede autorizar descuentos.');
+        const pct = Number($('quoteDiscountPercent')?.value || 0);
+        if (pct <= 0 || pct > 100) return alert('El porcentaje de descuento debe ser mayor a 0 y no exceder 100%.');
+        if (!String($('quoteDiscountReason')?.value || '').trim()) return alert('Captura el motivo del descuento.');
+      }
       window.PENDING_QUOTE_DATA = buildQuotePayload(e.target);
       try {
         await requestQuotePreview(window.PENDING_QUOTE_DATA);

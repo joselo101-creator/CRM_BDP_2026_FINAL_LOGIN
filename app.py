@@ -497,6 +497,13 @@ def init_db():
               flete_total REAL DEFAULT 0,
               flete_unitario REAL DEFAULT 0,
               casetas REAL DEFAULT 0,
+              material_total_bruto REAL DEFAULT 0,
+              material_total_neto REAL DEFAULT 0,
+              descuento_activo INTEGER DEFAULT 0,
+              descuento_porcentaje REAL DEFAULT 0,
+              descuento_aplicacion TEXT DEFAULT 'Material',
+              descuento_motivo TEXT DEFAULT '',
+              descuento_monto REAL DEFAULT 0,
               total REAL DEFAULT 0,
               requiere_factura INTEGER DEFAULT 0,
               subtotal REAL DEFAULT 0,
@@ -571,6 +578,13 @@ def init_db():
             "subtotal": "REAL DEFAULT 0",
             "iva": "REAL DEFAULT 0",
             "total_con_iva": "REAL DEFAULT 0",
+            "material_total_bruto": "REAL DEFAULT 0",
+            "material_total_neto": "REAL DEFAULT 0",
+            "descuento_activo": "INTEGER DEFAULT 0",
+            "descuento_porcentaje": "REAL DEFAULT 0",
+            "descuento_aplicacion": "TEXT DEFAULT 'Material'",
+            "descuento_motivo": "TEXT DEFAULT ''",
+            "descuento_monto": "REAL DEFAULT 0",
         }
         for col, definition in quote_extra_cols.items():
             if col not in qcols:
@@ -1046,14 +1060,24 @@ def generate_quote_pdf(client, data, output_dir=None, filename_override=None):
     rows = [
         ["Resumen del viaje", "Importe / dato"],
         ["Total de piezas", data.get("cantidad") or "0"],
+        ["Total materiales", money(data.get("material_total_bruto"))],
         ["Kilometros flete", data.get("km_flete") or "0"],
         ["Tarifa flete por km", money(data.get("tarifa_km"))],
         ["Flete base", money(data.get("flete_base"))],
         ["Casetas de cobro", money(data.get("casetas"))],
         ["Flete y casetas", money(data.get("flete_total"))],
+    ]
+    if data.get("descuento_activo"):
+        rows.extend([
+            [f"Descuento {float(data.get('descuento_porcentaje') or 0):g}% sobre {str(data.get('descuento_aplicacion') or 'Material').lower()}", f"- {money(data.get('descuento_monto'))}"],
+            ["Motivo del descuento", Paragraph(str(data.get("descuento_motivo") or "-"), styles["Normal"])],
+        ])
+        if data.get("descuento_aplicacion") == "Material":
+            rows.append(["Material despues del descuento", money(data.get("material_total_neto"))])
+    rows.extend([
         ["Total cotizado", money(data.get("total"))],
         ["Requiere factura", "Si" if data.get("requiere_factura") else "No"],
-    ]
+    ])
     if data.get("requiere_factura"):
         rows.extend([
             ["Subtotal", money(data.get("subtotal"))],
@@ -1148,7 +1172,7 @@ def export_quotes_report_xlsx(rows, status="", month=""):
     ws.title = "Cotizaciones"
     ws.append(["Reporte de cotizaciones", f"Estatus: {status or 'Todas'}", f"Periodo: {month or 'Todos'}"])
     ws.append([])
-    headers = ["Folio", "Fecha", "Cliente", "Municipio", "Zona", "Producto", "Cantidad", "Precio unitario", "Flete", "Casetas", "Total IVA incluido", "Estatus", "Elaboro", "PDF"]
+    headers = ["Folio", "Fecha", "Cliente", "Municipio", "Zona", "Producto", "Cantidad", "Precio unitario", "Material bruto", "Flete", "Casetas", "Descuento %", "Aplicado sobre", "Monto descuento", "Motivo descuento", "Total IVA incluido", "Estatus", "Elaboro", "PDF"]
     ws.append(headers)
     for row in rows:
         ws.append([
@@ -1160,8 +1184,13 @@ def export_quotes_report_xlsx(rows, status="", month=""):
             row.get("producto") or "",
             row.get("cantidad") or 0,
             row.get("precio_unitario") or 0,
+            row.get("material_total_bruto") or 0,
             row.get("flete_total") or 0,
             row.get("casetas") or 0,
+            row.get("descuento_porcentaje") or 0,
+            row.get("descuento_aplicacion") or "",
+            row.get("descuento_monto") or 0,
+            row.get("descuento_motivo") or "",
             row.get("total_con_iva") or row.get("total") or 0,
             row.get("status") or "",
             row.get("created_by_name") or row.get("created_by") or "",
@@ -1305,6 +1334,46 @@ def is_admin(user):
 
 def is_general_admin(user):
     return bool(user and user["role"] == "Administrador general")
+
+
+def calculate_quote_discount(data, material_total, freight_total, user):
+    """Calculate an authorized discount without trusting browser totals."""
+    enabled = str(data.get("descuento_activo", "")).lower() in ("1", "si", "sí", "true", "on")
+    gross_material = round(float(material_total or 0), 2)
+    freight = round(float(freight_total or 0), 2)
+    if not enabled:
+        return {
+            "descuento_activo": 0,
+            "descuento_porcentaje": 0.0,
+            "descuento_aplicacion": "Material",
+            "descuento_motivo": "",
+            "descuento_monto": 0.0,
+            "material_total_bruto": gross_material,
+            "material_total_neto": gross_material,
+            "total": round(gross_material + freight, 2),
+        }
+    if not is_admin(user):
+        raise PermissionError("Solo un administrador puede autorizar descuentos")
+    percentage = float(data.get("descuento_porcentaje") or 0)
+    if percentage <= 0 or percentage > 100:
+        raise ValueError("El descuento debe ser mayor a 0 y no exceder 100%")
+    application = "Total" if str(data.get("descuento_aplicacion") or "").strip().lower() == "total" else "Material"
+    reason = str(data.get("descuento_motivo") or "").strip()
+    if not reason:
+        raise ValueError("Captura el motivo del descuento")
+    base = gross_material if application == "Material" else gross_material + freight
+    discount_amount = round(base * percentage / 100, 2)
+    material_net = round(gross_material - discount_amount, 2) if application == "Material" else gross_material
+    return {
+        "descuento_activo": 1,
+        "descuento_porcentaje": percentage,
+        "descuento_aplicacion": application,
+        "descuento_motivo": reason,
+        "descuento_monto": discount_amount,
+        "material_total_bruto": gross_material,
+        "material_total_neto": material_net,
+        "total": round(gross_material + freight - discount_amount, 2),
+    }
 
 
 def owner_sql(user, alias=""):
@@ -2040,7 +2109,13 @@ class Handler(BaseHTTPRequestHandler):
             casetas = float(data.get("casetas") or 0)
             flete_base = km_flete * tarifa_km
             flete_total = flete_base + casetas
-            total = material_total + flete_total
+            try:
+                discount = calculate_quote_discount(data, material_total, flete_total, self.current_user())
+            except PermissionError as exc:
+                return self.json({"error": str(exc)}, 403)
+            except ValueError as exc:
+                return self.json({"error": str(exc)}, 400)
+            total = discount["total"]
             requiere_factura = str(data.get("requiere_factura", "")).lower() in ("1", "si", "sí", "true", "on")
             for item in items:
                 item["subtotal_material"] = item["cantidad"] * item["precio_unitario"]
@@ -2065,6 +2140,7 @@ class Handler(BaseHTTPRequestHandler):
                 "total_con_iva": total,
                 "created_by": actor_username,
                 "created_by_name": actor_name,
+                **discount,
             })
             with conn() as db:
                 if not can_access_client(db, self.current_user(), cid):
@@ -2107,7 +2183,13 @@ class Handler(BaseHTTPRequestHandler):
                 item["flete_unitario"] = 0
                 item["costo_unitario_entregado"] = item["precio_unitario"]
             costo_individual = items[0]["precio_unitario"] if len(items) == 1 else 0
-            total = material_total + flete_total
+            try:
+                discount = calculate_quote_discount(data, material_total, flete_total, self.current_user())
+            except PermissionError as exc:
+                return self.json({"error": str(exc)}, 403)
+            except ValueError as exc:
+                return self.json({"error": str(exc)}, 400)
+            total = discount["total"]
             precio = items[0]["precio_unitario"] if len(items) == 1 else 0
             product_summary = " + ".join(item["producto"] for item in items)
             data["items"] = items
@@ -2129,6 +2211,7 @@ class Handler(BaseHTTPRequestHandler):
             data["subtotal"] = subtotal
             data["iva"] = iva
             data["total_con_iva"] = total_con_iva
+            data.update(discount)
             data["tipo_contacto"] = "Cotización"
             data["resultado"] = data.get("resultado") or "Cotización enviada"
             data["etapa"] = data.get("etapa") or "Cotización enviada"
@@ -2155,8 +2238,10 @@ class Handler(BaseHTTPRequestHandler):
                 cur = db.execute(
                     """
                     INSERT INTO quotes
-                    (client_id, folio, fecha, cliente, producto, cantidad, precio_unitario, km_flete, tarifa_km, flete_base, flete_total, flete_unitario, casetas, total, requiere_factura, subtotal, iva, total_con_iva, costo_individual, status, pdf, created_at, updated_at, created_by, created_by_name)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    (client_id, folio, fecha, cliente, producto, cantidad, precio_unitario, km_flete, tarifa_km, flete_base, flete_total, flete_unitario, casetas,
+                     material_total_bruto, material_total_neto, descuento_activo, descuento_porcentaje, descuento_aplicacion, descuento_motivo, descuento_monto,
+                     total, requiere_factura, subtotal, iva, total_con_iva, costo_individual, status, pdf, created_at, updated_at, created_by, created_by_name)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     (
                         cid,
@@ -2172,6 +2257,13 @@ class Handler(BaseHTTPRequestHandler):
                         flete_total,
                         flete_unitario,
                         casetas,
+                        discount["material_total_bruto"],
+                        discount["material_total_neto"],
+                        discount["descuento_activo"],
+                        discount["descuento_porcentaje"],
+                        discount["descuento_aplicacion"],
+                        discount["descuento_motivo"],
+                        discount["descuento_monto"],
                         total,
                         1 if requiere_factura else 0,
                         subtotal,

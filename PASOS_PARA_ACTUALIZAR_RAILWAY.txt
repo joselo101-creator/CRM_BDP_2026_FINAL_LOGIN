@@ -1,0 +1,18 @@
+ACTUALIZACION RAILWAY - 29 JUNIO 2026
+
+1. Abra en GitHub el repositorio que usa Railway.
+2. Sustituya en la raiz los archivos contenidos en esta carpeta.
+3. No suba bdp_crm.sqlite, backups ni carpetas de PDFs.
+4. Confirme los cambios en GitHub.
+5. Espere en Railway hasta ver Deployment successful y Active.
+6. Abra el CRM y presione Ctrl + F5.
+
+PRUEBA RAPIDA
+- Entre como Administrador general o Administrador.
+- Abra Cotizaciones.
+- Compruebe la casilla Aplicar descuento autorizado.
+- Abra el boton de calculadora junto a Cantidad.
+- No autorice una cotizacion real hasta revisar su previsualizacion PDF.
+
+La migracion de columnas ocurre automaticamente al iniciar el CRM.
+La base activa permanece en el volumen /data.

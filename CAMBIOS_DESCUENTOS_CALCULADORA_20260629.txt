@@ -1,0 +1,38 @@
+CRM BDP - DESCUENTOS Y CALCULADORA DE TARIMAS
+Fecha: 29 de junio de 2026
+
+CAMBIOS REALIZADOS
+
+1. DESCUENTOS AUTORIZADOS
+- El descuento esta desactivado por defecto.
+- Solo Administrador general y Administrador pueden activarlo.
+- Vendedor no ve el control y el servidor rechaza cualquier intento directo.
+- Se captura porcentaje de 0.01% a 100%.
+- Se elige si aplica solo al material o al monto total, incluido flete y casetas.
+- El motivo es obligatorio.
+- El resumen del CRM muestra base, porcentaje, importe y motivo.
+- El PDF muestra el descuento y el motivo en el desglose final.
+- El comentario cronologico guarda automaticamente todos los datos del descuento.
+- El reporte Excel de cotizaciones incluye las nuevas columnas.
+
+2. CALCULADORA DE TARIMAS
+- Cada producto tiene un boton de calculadora junto a Cantidad.
+- Permite capturar numero de tarimas y piezas por tarima.
+- Multiplica y coloca automaticamente el total de piezas.
+- Funciona de forma independiente para cada producto en cargas consolidadas.
+
+3. DATOS CONSERVADOS
+- 19 clientes.
+- 39 interacciones.
+- 6 cotizaciones existentes.
+- 2 usuarios.
+- Los registros anteriores quedan sin descuento y no son recalculados.
+
+FORMULA
+- Descuento sobre material: material - descuento + flete + casetas.
+- Descuento sobre total: material + flete + casetas - descuento.
+- Los precios siguen considerandose con IVA incluido.
+
+SEGURIDAD
+- Los totales se recalculan en el servidor; no se confia en valores enviados por el navegador.
+- El servidor exige perfil administrativo, porcentaje valido y motivo.
