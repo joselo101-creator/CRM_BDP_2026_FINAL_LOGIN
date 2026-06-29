@@ -45,7 +45,8 @@ except Exception:
 
 
 APP_DIR = Path(__file__).resolve().parent
-DATA_DIR = Path(os.environ.get("DATA_DIR", str(APP_DIR))).resolve()
+IS_RAILWAY = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID") or os.environ.get("RAILWAY_SERVICE_ID"))
+DATA_DIR = Path("/data" if IS_RAILWAY else os.environ.get("DATA_DIR", str(APP_DIR))).resolve()
 DB_PATH = DATA_DIR / "bdp_crm.sqlite"
 BACKUP_DIR = DATA_DIR / "backups"
 QUOTE_DIR = DATA_DIR / "cotizaciones_pdf_actuales"
@@ -1834,6 +1835,23 @@ class Handler(BaseHTTPRequestHandler):
             password = form.get("password", [""])[0] or ""
             with conn() as db:
                 user_row = db.execute("SELECT * FROM users WHERE username=? AND active=1", (user,)).fetchone()
+                valid_database_password = bool(user_row and verify_password(password, user_row["password_hash"]))
+                valid_environment_admin = hmac.compare_digest(user, auth_user()) and hmac.compare_digest(password, auth_password())
+                if not valid_database_password and valid_environment_admin:
+                    repaired_hash = hash_password(password)
+                    existing = db.execute("SELECT id FROM users WHERE username=?", (user,)).fetchone()
+                    if existing:
+                        db.execute(
+                            "UPDATE users SET password_hash=?, role='Administrador general', active=1, updated_at=? WHERE id=?",
+                            (repaired_hash, now_iso(), existing["id"]),
+                        )
+                    else:
+                        db.execute(
+                            "INSERT INTO users(username,password_hash,full_name,role,active,created_at,updated_at) VALUES(?,?,?,'Administrador general',1,?,?)",
+                            (user, repaired_hash, "Administrador BDP", now_iso(), now_iso()),
+                        )
+                    db.commit()
+                    user_row = db.execute("SELECT * FROM users WHERE username=? AND active=1", (user,)).fetchone()
             if user_row and verify_password(password, user_row["password_hash"]):
                 return self._send(
                     303,
